@@ -89,7 +89,26 @@ int test_key_expansion(void) {
     return 0;
 }
 
+int test_gf_mult(void)
+{
+    uint8_t a = 0x87;
+    uint8_t b[7] = {0x01, 0x02, 0x03, 0x09, 0x0b, 0x0d, 0x0e};
+    uint8_t expected[7] = {0x87, 0x15, 0x92, 0xd3, 0xc6, 0xf9, 0x6b};
+
+    for (int i = 0; i < 7; i++) {
+        uint8_t actual = gf_mult(a, b[i]);
+        if (actual != expected[i]) {
+            printf("gf_mult:(%d, %d)\n\texpected 0x%x, actual 0x%x\n", a, b[i], expected[i], actual);
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
 int main(void) {
     test_key_expansion();
+    test_gf_mult();
+
     return 0;
 }

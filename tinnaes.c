@@ -104,3 +104,13 @@ static uint32_t* key_exp(uint32_t* key)
 
     return round_key;
 }
+
+static uint8_t gf_mult(uint8_t a, uint8_t b)
+{
+    uint8_t prod = 0;
+    for (int i = 0; i < 8; i++) {
+        prod ^= a * ((b >> i) & 1);
+        a = (a << 1) ^  (0x1b * ((a >> 7) & 1));
+    }
+    return prod;
+}
