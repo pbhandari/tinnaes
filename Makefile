@@ -1,10 +1,9 @@
 PREFIX = $(HOME)
 BINDIR = $(PREFIX)/bin
-BINARY = tinnaes
 
-CC ?= gcc
-CFLAGS ?= -g -Wall -pedantic -O2 -std=c99 -Wno-unused-function
-LDFLAGS ?=
+CC := clang
+CFLAGS := -g -Wall -pedantic -O2 -std=c99 -Wno-unused-function
+LDFLAGS :=
 
 all: tinnaes.o
 default: tinnaes.o

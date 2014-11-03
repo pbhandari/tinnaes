@@ -19,7 +19,9 @@
 #include <stdlib.h>
 #include "tinnaes.c"
 
-int test_key_expansion(void) {
+int
+test_key_expansion(void)
+{
     uint32_t keys[4][4] = { {0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c},
                             {0x00000000, 0x00000000, 0x00000000, 0x00000000},
                             {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff},
@@ -89,7 +91,8 @@ int test_key_expansion(void) {
     return 0;
 }
 
-int test_gf_mult(void)
+int
+test_gf_mult(void)
 {
     uint8_t a = 0x87;
     uint8_t b[7] = {0x01, 0x02, 0x03, 0x09, 0x0b, 0x0d, 0x0e};
@@ -106,7 +109,9 @@ int test_gf_mult(void)
     return 0;
 }
 
-int main(void) {
+int
+main(void)
+{
     test_key_expansion();
     test_gf_mult();
 

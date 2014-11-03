@@ -17,9 +17,10 @@
 #ifndef TINNAES_H
 #define TINNAES_H
 
-#include <stdint.h>
+unsigned char*
+encrypt(unsigned char* plaintext, unsigned char* key);
 
-uint8_t* encrypt(uint8_t* plaintext, uint8_t* key);
-uint8_t* decrypt(uint8_t* ciphertext, uint8_t* key);
+unsigned char*
+decrypt(unsigned char* ciphertext,unsigned char* key);
 
 #endif  // TINNAES_H

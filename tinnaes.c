@@ -79,7 +79,9 @@ static const uint8_t RCON[255] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb
 };
 
-static uint32_t* key_exp(uint32_t* key)
+static
+uint32_t*
+key_exp(uint32_t* key)
 {
     uint32_t* round_key = malloc(44*sizeof(uint32_t));
 
@@ -105,7 +107,9 @@ static uint32_t* key_exp(uint32_t* key)
     return round_key;
 }
 
-static uint8_t gf_mult(uint8_t a, uint8_t b)
+static
+uint8_t
+gf_mult(uint8_t a, uint8_t b)
 {
     uint8_t prod = 0;
     for (int i = 0; i < 8; i++) {
