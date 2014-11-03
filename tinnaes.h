@@ -14,12 +14,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef INCLUDE_TINNAES_H_
-#define INCLUDE_TINNAES_H_
+#ifndef TINNAES_H
+#define TINNAES_H
 
 #include <stdint.h>
 
 uint8_t* encrypt(uint8_t* plaintext, uint8_t* key);
 uint8_t* decrypt(uint8_t* ciphertext, uint8_t* key);
 
-#endif  // INCLUDE_TINNAES_H_
+#endif  // TINNAES_H
