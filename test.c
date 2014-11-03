@@ -16,8 +16,38 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "tinnaes.c"
+
+uint8_t**
+make_state(uint8_t state[4][4])
+{
+    uint8_t **new_state = malloc(4*(sizeof(uint8_t*)));
+    for (int i = 0; i < 4; i++) {
+        uint8_t *row_state = (uint8_t*)malloc(4*(sizeof(uint8_t)));
+
+        row_state[0] = state[i][0];
+        row_state[1] = state[i][1];
+        row_state[2] = state[i][2];
+        row_state[3] = state[i][3];
+
+        new_state[i] = row_state;
+    }
+
+    return new_state;
+}
+
+void
+delete_state(uint8_t **state)
+{
+    free(state[0]);
+    free(state[1]);
+    free(state[2]);
+    free(state[3]);
+    free(state);
+}
+
 
 int
 test_key_expansion(void)
@@ -110,10 +140,39 @@ test_gf_mult(void)
 }
 
 int
+test_add_round_key(void)
+{
+    uint8_t state[4][4] = {{0x58, 0x4d, 0xca, 0xf1}, {0x1b, 0x4b, 0x5a, 0xac},
+                           {0xdb, 0xe7, 0xca, 0xa8}, {0x1b, 0x6b, 0xb0, 0xe5}};
+    uint32_t sched[4]    = {0xf2c295f2, 0x7a96b943, 0x5935807a, 0x7359f67f};
+    uint8_t expect[4][4] = {{0xaa, 0x8f, 0x5f, 0x03}, {0x61, 0xdd, 0xe3, 0xef},
+                            {0x82, 0xd2, 0x4a, 0xd2}, {0x68, 0x32, 0x46, 0x9a}};
+
+    uint8_t** st = make_state(state);
+    add_round_key(st, sched);
+
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (st[i][j] != expect[i][j]) {
+                printf("add_round_key(%d, %d): Using 0x%x\n"
+                        "\t expected: 0x%x, actual: 0x%x\n",
+                                i, j, sched[i], expect[i][j], st[i][j]);
+                return 1;
+            }
+        }
+    }
+
+    delete_state(st);
+
+    return 0;
+}
+
+int
 main(void)
 {
     test_key_expansion();
     test_gf_mult();
+    test_add_round_key();
 
     return 0;
 }

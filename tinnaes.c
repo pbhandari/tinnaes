@@ -118,3 +118,16 @@ gf_mult(uint8_t a, uint8_t b)
     }
     return prod;
 }
+
+static
+void
+add_round_key(uint8_t** state, uint32_t* rkey)
+{
+    for (int i = 0; i < 4; i++) {
+        // TODO: performance testing on this
+        state[i][0] ^= (uint8_t)(rkey[i] >> 24);
+        state[i][1] ^= (uint8_t)(rkey[i] >> 16);
+        state[i][2] ^= (uint8_t)(rkey[i] >> 8);
+        state[i][3] ^= (uint8_t)(rkey[i]);
+    }
+}
