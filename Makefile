@@ -3,7 +3,7 @@ BINDIR = $(PREFIX)/bin
 BINARY = tinnaes
 
 CC ?= gcc
-CFLAGS ?= -g -Wall -pedantic -O2 -std=c11 -Wno-unused-function
+CFLAGS ?= -g -Wall -pedantic -O2 -std=c99 -Wno-unused-function
 LDFLAGS ?=
 
 all: tinnaes.o
