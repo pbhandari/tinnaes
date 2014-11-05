@@ -129,11 +129,15 @@ test_gf_mult(void)
     uint8_t expected[7] = {0x87, 0x15, 0x92, 0xd3, 0xc6, 0xf9, 0x6b};
 
     for (int i = 0; i < 7; i++) {
-        uint8_t actual = gf_mult(a, b[i]);
+        uint8_t actual = 0;
+        GF_MULT(a, b[i], actual);
+
         if (actual != expected[i]) {
             printf("gf_mult:(%d, %d)\n\texpected 0x%x, actual 0x%x\n", a, b[i], expected[i], actual);
             return 1;
         }
+
+        a = 0x87;
     }
 
     return 0;
@@ -142,27 +146,52 @@ test_gf_mult(void)
 int
 test_add_round_key(void)
 {
-    uint8_t state[4][4] = {{0x58, 0x4d, 0xca, 0xf1}, {0x1b, 0x4b, 0x5a, 0xac},
-                           {0xdb, 0xe7, 0xca, 0xa8}, {0x1b, 0x6b, 0xb0, 0xe5}};
-    uint32_t sched[4]    = {0xf2c295f2, 0x7a96b943, 0x5935807a, 0x7359f67f};
-    uint8_t expect[4][4] = {{0xaa, 0x8f, 0x5f, 0x03}, {0x61, 0xdd, 0xe3, 0xef},
-                            {0x82, 0xd2, 0x4a, 0xd2}, {0x68, 0x32, 0x46, 0x9a}};
+    uint32_t sched[4]  = {0xf2c295f2, 0x7a96b943, 0x5935807a, 0x7359f67f};
+    uint32_t expect[4] = {0xaa8f5f03, 0x61dde3ef, 0x82d24ad2, 0x6832469a};
+    uint32_t state[4]  = {0x584dcaf1, 0x1b4b5aac, 0xdbe7caa8, 0x1b6bb0e5};
 
-    uint8_t** st = make_state(state);
-    add_round_key(st, sched);
-
+    ADD_ROUND_KEY(state, sched);
     for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            if (st[i][j] != expect[i][j]) {
-                printf("add_round_key(%d, %d): Using 0x%x\n"
+        if (state[i] != expect[i]) {
+                printf("add_round_key(%d): Using 0x%x\n"
                         "\t expected: 0x%x, actual: 0x%x\n",
-                                i, j, sched[i], expect[i][j], st[i][j]);
-                return 1;
-            }
+                        i, sched[i], expect[i], state[i]);
+            return 1;
         }
     }
 
-    delete_state(st);
+    return 0;
+}
+
+int
+test_sub_bytes(void)
+{
+
+    uint32_t state[4] = {0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff};
+    uint32_t expect[4] = {0x638293c3, 0x1bfc33f5, 0xc4eeacea, 0x4bc12816};
+
+    SUB_BYTES(state, SBOX);
+    for (int i = 0; i < 4; i++) {
+        if (state[i] != expect[i]) {
+                printf("sub_bytes(%d):\n"
+                        "\t expected: 0x%x, actual: 0x%x\n",
+                        i, expect[i], state[i]);
+            return 1;
+        }
+    }
+
+    uint32_t state2[4] = {0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff};
+    uint32_t expect2[4] = {0x52e39466, 0x86edd302, 0x97f962fe, 0x27c9997d};
+
+    SUB_BYTES(state2, R_SBOX);
+    for (int i = 0; i < 4; i++) {
+        if (state2[i] != expect2[i]) {
+                printf("sub_bytes(%d):\n"
+                        "\t expected: 0x%x, actual: 0x%x\n",
+                        i, expect2[i], state2[i]);
+            return 1;
+        }
+    }
 
     return 0;
 }
@@ -173,6 +202,7 @@ main(void)
     test_key_expansion();
     test_gf_mult();
     test_add_round_key();
+    test_sub_bytes();
 
     return 0;
 }

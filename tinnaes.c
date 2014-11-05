@@ -79,6 +79,29 @@ static const uint8_t RCON[255] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb
 };
 
+
+#define SBOX_AT(it, sb) (\
+        (sb[(uint8_t)(it>>24)]<<24) | sb[(uint8_t)(it)] \
+        | (sb[(uint8_t)(it>>16)]<<16) | (sb[(uint8_t)(it>>8)]<<8) \
+        )
+
+#define ADD_ROUND_KEY(st, rkey) do { \
+    st[0] ^= rkey[0]; st[1] ^= rkey[1]; st[2] ^= rkey[2]; st[3] ^= rkey[3]; \
+} while(0);
+
+#define SUB_BYTES(st, sb) do { \
+    st[0] = SBOX_AT(st[0], sb); st[1] = SBOX_AT(st[1], sb); \
+    st[2] = SBOX_AT(st[2], sb); st[3] = SBOX_AT(st[3], sb); \
+} while(0);
+
+#define GF_MULT(a, b, p) \
+    do { \
+        p ^= (a * (b & 1)); a = ((a << 1) ^ (0x1b * ((a >> 7) & 1))); \
+    } while (b >>= 1);
+
+#define LSHIFT(word, n) ((word<<(n*8)) | (word>>((4-n)*8)))
+#define RSHIFT(word, n) ((word>>(n*8)) | (word<<((4-n)*8)))
+
 static
 uint32_t*
 key_exp(uint32_t* key)
@@ -92,11 +115,7 @@ key_exp(uint32_t* key)
     round_key[3] = key[3];
 
     for(int i = 1, j = 4; i < 11; i++) {
-        uint32_t rk = round_key[j - 1];
-        rk =  (SBOX[(uint8_t)(rk >> 16)] ^ RCON[i]) << 24
-             | SBOX[(uint8_t)(rk >>  8)]            << 16
-             | SBOX[(uint8_t)(rk      )]            << 8
-             | SBOX[(uint8_t)(rk >> 24)];
+        uint32_t rk = SBOX_AT(LSHIFT(round_key[j-1], 1), SBOX) ^ (RCON[i] << 24);
 
         round_key[j] = round_key[j - 4] ^ rk;               j++;
         round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
@@ -105,29 +124,4 @@ key_exp(uint32_t* key)
     }
 
     return round_key;
-}
-
-static
-uint8_t
-gf_mult(uint8_t a, uint8_t b)
-{
-    uint8_t prod = 0;
-    for (int i = 0; i < 8; i++) {
-        prod ^= a * ((b >> i) & 1);
-        a = (a << 1) ^  (0x1b * ((a >> 7) & 1));
-    }
-    return prod;
-}
-
-static
-void
-add_round_key(uint8_t** state, uint32_t* rkey)
-{
-    for (int i = 0; i < 4; i++) {
-        // TODO: performance testing on this
-        state[i][0] ^= (uint8_t)(rkey[i] >> 24);
-        state[i][1] ^= (uint8_t)(rkey[i] >> 16);
-        state[i][2] ^= (uint8_t)(rkey[i] >> 8);
-        state[i][3] ^= (uint8_t)(rkey[i]);
-    }
 }
