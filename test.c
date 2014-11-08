@@ -106,7 +106,8 @@ test_key_expansion(void)
     };
 
     for(int i = 0; i < 4; i++) {
-        uint32_t *actual = key_exp(keys[i]);
+        uint32_t actual[44] = {keys[i][0], keys[i][1], keys[i][2], keys[i][3]};
+        KEY_EXP(actual);
         for (int j = 0; j < 44; j++) {
             if (expand[i][j] != actual[j]) {
                 printf("key_exp(%d, %d): Using 0x%x %x %x %x\n"
@@ -116,7 +117,6 @@ test_key_expansion(void)
                 return 1;
             }
         }
-        free(actual);
     }
     return 0;
 }
@@ -129,8 +129,7 @@ test_gf_mult(void)
     uint8_t expected[7] = {0x87, 0x15, 0x92, 0xd3, 0xc6, 0xf9, 0x6b};
 
     for (int i = 0; i < 7; i++) {
-        uint8_t actual = 0;
-        GF_MULT(a, b[i], actual);
+        uint8_t actual = gf_mult(a, b[i]);
 
         if (actual != expected[i]) {
             printf("gf_mult:(%d, %d)\n\texpected 0x%x, actual 0x%x\n", a, b[i], expected[i], actual);

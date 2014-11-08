@@ -79,49 +79,39 @@ static const uint8_t RCON[255] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb
 };
 
-
-#define SBOX_AT(it, sb) (\
-        (sb[(uint8_t)(it>>24)]<<24) | sb[(uint8_t)(it)] \
-        | (sb[(uint8_t)(it>>16)]<<16) | (sb[(uint8_t)(it>>8)]<<8) \
-        )
-
-#define ADD_ROUND_KEY(st, rkey) do { \
-    st[0] ^= rkey[0]; st[1] ^= rkey[1]; st[2] ^= rkey[2]; st[3] ^= rkey[3]; \
-} while(0);
-
-#define SUB_BYTES(st, sb) do { \
-    st[0] = SBOX_AT(st[0], sb); st[1] = SBOX_AT(st[1], sb); \
-    st[2] = SBOX_AT(st[2], sb); st[3] = SBOX_AT(st[3], sb); \
-} while(0);
-
-#define GF_MULT(a, b, p) \
-    do { \
-        p ^= (a * (b & 1)); a = ((a << 1) ^ (0x1b * ((a >> 7) & 1))); \
-    } while (b >>= 1);
-
 #define LSHIFT(word, n) ((word<<(n*8)) | (word>>((4-n)*8)))
 #define RSHIFT(word, n) ((word>>(n*8)) | (word<<((4-n)*8)))
 
+#define SBOX_AT(i, s, m) \
+    ((s[((i>>24)&m)]<<24)|(s[((i>>16)&m)]<<16)|(s[((i>>8)&m)]<<8)|s[(i&m)])
+
+#define ADD_ROUND_KEY(st, rkey)                                             \
+do {                                                                        \
+    st[0] ^= rkey[0]; st[1] ^= rkey[1]; st[2] ^= rkey[2]; st[3] ^= rkey[3]; \
+} while(0);                                                                 \
+
+
+#define SUB_BYTES(st, sb)                                               \
+do {                                                                    \
+    st[0] = SBOX_AT(st[0], sb, 0xff); st[1] = SBOX_AT(st[1], sb, 0xff); \
+    st[2] = SBOX_AT(st[2], sb, 0xff); st[3] = SBOX_AT(st[3], sb, 0xff); \
+} while(0);                                                             \
+
+
+#define KEY_EXP(rk)                                                         \
+for(int i = 1, j = 4; i < 11; i++) {                                        \
+    uint32_t k = SBOX_AT(LSHIFT(rk[j-1], 1),SBOX,0xff)^(RCON[i]<<24);       \
+    rk[j] = rk[j - 4] ^ k;         j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
+    rk[j] = rk[j - 4] ^ rk[j - 1]; j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
+}                                                                           \
+
 static
-uint32_t*
-key_exp(uint32_t* key)
-{
-    uint32_t* round_key = malloc(44*sizeof(uint32_t));
-
-    // copy the first 4 words over.
-    round_key[0] = key[0];
-    round_key[1] = key[1];
-    round_key[2] = key[2];
-    round_key[3] = key[3];
-
-    for(int i = 1, j = 4; i < 11; i++) {
-        uint32_t rk = SBOX_AT(LSHIFT(round_key[j-1], 1), SBOX) ^ (RCON[i] << 24);
-
-        round_key[j] = round_key[j - 4] ^ rk;               j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-    }
-
-    return round_key;
+uint8_t
+gf_mult(uint8_t a, uint8_t b) {
+    uint8_t p = 0;
+    do {
+        p ^= (a * (b & 1));
+        a = ((a << 1) ^ (0x1b * ((a >> 7) & 1)));
+    } while (b >>= 1);
+    return p;
 }
