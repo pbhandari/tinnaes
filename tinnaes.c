@@ -105,6 +105,14 @@ for(int i = 1, j = 4; i < 11; i++) {                                        \
     rk[j] = rk[j - 4] ^ rk[j - 1]; j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
 }                                                                           \
 
+#define MIX_COLUMNS(st, mm)                                             \
+for (int i = 0; i < 4; i++) {                                           \
+    st[i] =   gf_mult((st[i] >> 24) & 0xff, (mm >> 24) & 0xff) << 24    \
+            | gf_mult((st[i] >> 16) & 0xff, (mm >> 16) & 0xff) << 16    \
+            | gf_mult((st[i] >> 8)  & 0xff, (mm >> 8)  & 0xff) << 8     \
+            | gf_mult((st[i])       & 0xff, (mm)       & 0xff);         \
+}                                                                       \
+
 static
 uint8_t
 gf_mult(uint8_t a, uint8_t b) {
