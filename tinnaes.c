@@ -82,6 +82,7 @@ static const uint8_t RCON[255] = {
 #define LSHIFT(word, n) ((word<<(n*8)) | (word>>((4-n)*8)))
 #define RSHIFT(word, n) ((word>>(n*8)) | (word<<((4-n)*8)))
 
+// i = index, s = SBOX or INV_SBOX, m = mask(usually 0xff to avoid casting)
 #define SBOX_AT(i, s, m) \
     ((s[((i>>24)&m)]<<24)|(s[((i>>16)&m)]<<16)|(s[((i>>8)&m)]<<8)|s[(i&m)])
 
@@ -105,13 +106,14 @@ for(int i = 1, j = 4; i < 11; i++) {                                        \
     rk[j] = rk[j - 4] ^ rk[j - 1]; j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
 }                                                                           \
 
-#define MIX_COLUMNS(st, mm)                                             \
-for (int i = 0; i < 4; i++) {                                           \
-    st[i] =   gf_mult((st[i] >> 24) & 0xff, (mm >> 24) & 0xff) << 24    \
-            | gf_mult((st[i] >> 16) & 0xff, (mm >> 16) & 0xff) << 16    \
-            | gf_mult((st[i] >> 8)  & 0xff, (mm >> 8)  & 0xff) << 8     \
-            | gf_mult((st[i])       & 0xff, (mm)       & 0xff);         \
-}                                                                       \
+#define MIX_COLUMNS(state, a, b, c, d)                        \
+for (int i = 0; i < 4; i++) {                                 \
+    state[i] =   gf_mult((state[i] >> 24) & 0xff, a) << 24    \
+               | gf_mult((state[i] >> 16) & 0xff, b) << 16    \
+               | gf_mult((state[i] >> 8)  & 0xff, c) << 8     \
+               | gf_mult((state[i])       & 0xff, d);         \
+}                                                             \
+
 
 static
 uint8_t

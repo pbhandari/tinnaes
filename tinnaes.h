@@ -21,6 +21,6 @@ unsigned char*
 encrypt(unsigned char* plaintext, unsigned char* key);
 
 unsigned char*
-decrypt(unsigned char* ciphertext,unsigned char* key);
+decrypt(unsigned char* ciphertext, unsigned char* key);
 
 #endif  // TINNAES_H
