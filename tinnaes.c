@@ -114,6 +114,20 @@ for (int i = 0; i < 4; i++) {                                 \
                | gf_mult((state[i])       & 0xff, d);         \
 }                                                             \
 
+#define SHIFT_ROWS(state, new_state)                                \
+do {                                                                \
+    new_state[0] =  state[0] & 0xff000000 | state[1] & 0x00ff0000   \
+                  | state[2] & 0x0000ff00 | state[3] & 0x000000ff   \
+                                                                    \
+    new_state[1] =  state[1] & 0xff000000 | state[2] & 0x00ff0000   \
+                  | state[3] & 0x0000ff00 | state[0] & 0x000000ff   \
+                                                                    \
+    new_state[2] =  state[2] & 0xff000000 | state[3] & 0x00ff0000   \
+                  | state[0] & 0x0000ff00 | state[1] & 0x000000ff   \
+                                                                    \
+    new_state[3] =  state[3] & 0xff000000 | state[0] & 0x00ff0000   \
+                  | state[1] & 0x0000ff00 | state[2] & 0x000000ff   \
+} while(0);                                                         \
 
 static
 uint8_t
