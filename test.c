@@ -196,12 +196,39 @@ test_sub_bytes(void)
 }
 
 int
+test_shift_rows(void)
+{
+    uint32_t state[3][4] = {{0x00010203, 0x00010203, 0x00010203, 0x00010203},
+                            {0x00000000, 0x01010101, 0x02020202, 0x03030303},
+                            {0x00000000, 0x03030303, 0x02020202, 0x01010101}};
+    uint32_t expect[3][4] = {{0x00010203, 0x00010203, 0x00010203, 0x00010203},
+                             {0x00010203, 0x01020300, 0x02030001, 0x03000102},
+                             {0x00030201, 0x03020100, 0x02010003, 0x01000302}};
+
+    for(int i = 0; i < 3; i++) {
+        uint32_t actual[4] = {0, 0, 0, 0};
+        SHIFT_ROWS(state[i], actual);
+        for(int j = 0; j < 4; j++) {
+            if (expect[i][j] != actual[j]) {
+                printf("shift_rows(%d, %d): Using 0x%x %x %x %x\n"
+                        "\t expected: 0x%x, actual: 0x%x\n",
+                                i, j, state[i][0], state[i][1], state[i][2],
+                                state[i][3], expect[i][j], actual[j]);
+            }
+        }
+    }
+
+    return 0;
+}
+
+int
 main(void)
 {
     test_key_expansion();
     test_gf_mult();
     test_add_round_key();
     test_sub_bytes();
+    test_shift_rows();
 
     return 0;
 }
