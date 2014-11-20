@@ -218,6 +218,21 @@ test_shift_rows(void)
         }
     }
 
+    uint32_t expec2[3][4] = {{0x00010203, 0x00010203, 0x00010203, 0x00010203},
+                             {0x00010203, 0x03000102, 0x02030001, 0x01020300},
+                             {0x00030201, 0x01000302, 0x02010003, 0x03020100}};
+    for(int i = 0; i < 3; i++) {
+        uint32_t actual[4] = {0, 0, 0, 0};
+        INV_SHIFT_ROWS(state[i], actual);
+        for(int j = 0; j < 4; j++) {
+            if (expec2[i][j] != actual[j]) {
+                printf("shift_rows(%d, %d): Using 0x%x %x %x %x\n"
+                        "\t expected: 0x%x, actual: 0x%x\n",
+                                i, j, state[i][0], state[i][1], state[i][2],
+                                state[i][3], expec2[i][j], actual[j]);
+            }
+        }
+    }
     return 0;
 }
 
