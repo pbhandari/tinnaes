@@ -79,32 +79,41 @@ static const uint8_t RCON[255] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb
 };
 
-#define LSHIFT(word, n) ((word<<(n*8)) | (word>>((4-n)*8)))
-#define RSHIFT(word, n) ((word>>(n*8)) | (word<<((4-n)*8)))
+#define LSHIFT(word, n) ((word << (n*8)) | (word >> ((4-n) * 8)))
+#define RSHIFT(word, n) ((word >> (n*8)) | (word << ((4-n) * 8)))
 
-// i = index, s = SBOX or INV_SBOX, m = mask(usually 0xff to avoid casting)
-#define SBOX_AT(i, s, m) \
-    ((s[((i>>24)&m)]<<24)|(s[((i>>16)&m)]<<16)|(s[((i>>8)&m)]<<8)|s[(i&m)])
-
-#define ADD_ROUND_KEY(st, rkey)                                             \
-do {                                                                        \
-    st[0] ^= rkey[0]; st[1] ^= rkey[1]; st[2] ^= rkey[2]; st[3] ^= rkey[3]; \
-} while(0);                                                                 \
+#define SBOX_AT(idx, sbox)                                                 \
+    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) | \
+     (sbox[0xff & (idx >>  8)] <<  8) | (sbox[0xff & (idx      )]      ))
 
 
-#define SUB_BYTES(st, sb)                                               \
-do {                                                                    \
-    st[0] = SBOX_AT(st[0], sb, 0xff); st[1] = SBOX_AT(st[1], sb, 0xff); \
-    st[2] = SBOX_AT(st[2], sb, 0xff); st[3] = SBOX_AT(st[3], sb, 0xff); \
-} while(0);                                                             \
+#define ADD_ROUND_KEY(state, round_key) \
+do {                          \
+    state[0] ^= round_key[0]; \
+    state[1] ^= round_key[1]; \
+    state[2] ^= round_key[2]; \
+    state[3] ^= round_key[3]; \
+} while(0);                   \
 
 
-#define KEY_EXP(rk)                                                         \
-for(int i = 1, j = 4; i < 11; i++) {                                        \
-    uint32_t k = SBOX_AT(LSHIFT(rk[j-1], 1),SBOX,0xff)^(RCON[i]<<24);       \
-    rk[j] = rk[j - 4] ^ k;         j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
-    rk[j] = rk[j - 4] ^ rk[j - 1]; j++; rk[j] = rk[j - 4] ^ rk[j - 1]; j++; \
-}                                                                           \
+#define SUB_BYTES(state, sbox)          \
+do {                                    \
+    state[0] = SBOX_AT(state[0], sbox); \
+    state[1] = SBOX_AT(state[1], sbox); \
+    state[2] = SBOX_AT(state[2], sbox); \
+    state[3] = SBOX_AT(state[3], sbox); \
+} while(0);                             \
+
+
+#define KEY_EXP(round_key)                                                   \
+for(int i = 1, j = 4; i < 11; i++) {                                         \
+    uint32_t k = SBOX_AT(LSHIFT(round_key[j-1], 1), SBOX) ^ (RCON[i] << 24); \
+    round_key[j] = round_key[j - 4] ^ k;                j++;                 \
+    round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;                 \
+    round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;                 \
+    round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;                 \
+}                                                                            \
+
 
 #define MIX_COLUMNS(state, a, b, c, d)                        \
 for (int i = 0; i < 4; i++) {                                 \
@@ -113,6 +122,7 @@ for (int i = 0; i < 4; i++) {                                 \
                | gf_mult((state[i] >> 8)  & 0xff, c) << 8     \
                | gf_mult((state[i])       & 0xff, d);         \
 }                                                             \
+
 
 #define SHIFT_ROWS(state, new_state)                                \
 do {                                                                \
@@ -129,6 +139,7 @@ do {                                                                \
                   | state[1] & 0x0000ff00 | state[2] & 0x000000ff;  \
 } while(0);                                                         \
 
+
 #define INV_SHIFT_ROWS(state, new_state)                            \
 do {                                                                \
     new_state[0] =  state[0] & 0xff000000 | state[1] & 0x00ff0000   \
@@ -143,6 +154,7 @@ do {                                                                \
     new_state[1] =  state[3] & 0xff000000 | state[0] & 0x00ff0000   \
                   | state[1] & 0x0000ff00 | state[2] & 0x000000ff;  \
 } while(0);                                                         \
+
 
 static
 uint8_t
