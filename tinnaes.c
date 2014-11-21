@@ -208,3 +208,27 @@ decrypt_block(uint32_t ciphertext[4], uint32_t key[44])
     SUB_BYTES(ciphertext, R_SBOX);
     ADD_ROUND_KEY(ciphertext, key);
 }
+
+
+static
+void
+encrypt_block(uint32_t plaintext[4], uint32_t key[44])
+{
+    uint32_t temp_pt[4] = {0, 0, 0, 0};
+
+    ADD_ROUND_KEY(plaintext, key);
+
+    for(int i = 4; i < 40; i+=4) {
+        SHIFT_ROWS(plaintext, temp_pt);
+        memcpy(plaintext, temp_pt, sizeof(temp_pt));
+
+        SUB_BYTES(plaintext, SBOX);
+        MIX_COLUMNS(plaintext, 2, 3, 1, 1);
+        ADD_ROUND_KEY(plaintext, (key + i));
+    }
+    SHIFT_ROWS(plaintext, temp_pt);
+    memcpy(plaintext, temp_pt, sizeof(temp_pt));
+
+    SUB_BYTES(plaintext, SBOX);
+    ADD_ROUND_KEY(plaintext, (key + 40));
+}
