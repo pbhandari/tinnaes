@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 static const uint8_t SBOX[256] = {
   // 0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
@@ -115,13 +116,29 @@ for(int i = 1, j = 4; i < 11; i++) {                                         \
 }                                                                            \
 
 
-#define MIX_COLUMNS(state, a, b, c, d)                        \
-for (int i = 0; i < 4; i++) {                                 \
-    state[i] =   gf_mult((state[i] >> 24) & 0xff, a) << 24    \
-               | gf_mult((state[i] >> 16) & 0xff, b) << 16    \
-               | gf_mult((state[i] >> 8)  & 0xff, c) << 8     \
-               | gf_mult((state[i])       & 0xff, d);         \
-}                                                             \
+#define MIX_COLUMNS(state, a, b, c, d)                               \
+for (int i = 0; i < 4; i++) {                                        \
+                    /* word one*/                                    \
+    state[i] = ((gf_mult((state[i] >> 24) & 0xff, a)                 \
+               ^ gf_mult((state[i] >> 16) & 0xff, b)                 \
+               ^ gf_mult((state[i] >> 8)  & 0xff, c)                 \
+               ^ gf_mult((state[i])       & 0xff, d)) & 0xff) << 24  \
+                    /* word two */                                   \
+             | ((gf_mult((state[i] >> 24) & 0xff, d)                 \
+               ^ gf_mult((state[i] >> 16) & 0xff, a)                 \
+               ^ gf_mult((state[i] >> 8)  & 0xff, b)                 \
+               ^ gf_mult((state[i])       & 0xff, c)) & 0xff) << 16  \
+                    /* word three */                                 \
+             | ((gf_mult((state[i] >> 24) & 0xff, c)                 \
+               ^ gf_mult((state[i] >> 16) & 0xff, d)                 \
+               ^ gf_mult((state[i] >> 8)  & 0xff, a)                 \
+               ^ gf_mult((state[i])       & 0xff, b)) & 0xff) << 8   \
+                    /* word four */                                  \
+             | ((gf_mult((state[i] >> 24) & 0xff, b)                 \
+               ^ gf_mult((state[i] >> 16) & 0xff, c)                 \
+               ^ gf_mult((state[i] >> 8)  & 0xff, d)                 \
+               ^ gf_mult((state[i])       & 0xff, a)) & 0xff);       \
+}                                                                    \
 
 
 #define SHIFT_ROWS(state, new_state)                                \
@@ -137,6 +154,7 @@ do {                                                                \
                                                                     \
     new_state[3] =  state[3] & 0xff000000 | state[0] & 0x00ff0000   \
                   | state[1] & 0x0000ff00 | state[2] & 0x000000ff;  \
+                                                                    \
 } while(0);                                                         \
 
 
@@ -157,12 +175,36 @@ do {                                                                \
 
 
 static
-uint8_t
-gf_mult(uint8_t a, uint8_t b) {
-    uint8_t p = 0;
+unsigned char
+gf_mult(unsigned char a, unsigned char b) {
+    unsigned char p = 0;
     do {
         p ^= (a * (b & 1));
         a = ((a << 1) ^ (0x1b * ((a >> 7) & 1)));
     } while (b >>= 1);
     return p;
+}
+
+
+static
+void
+decrypt_block(uint32_t ciphertext[4], uint32_t key[44])
+{
+    uint32_t temp_pt[4] = {0, 0, 0, 0};
+
+    ADD_ROUND_KEY(ciphertext, (key + 40));
+
+    for(int i = 36; i > 0; i-=4) {
+        INV_SHIFT_ROWS(ciphertext, temp_pt);
+        memcpy(ciphertext, temp_pt, sizeof(temp_pt));
+
+        SUB_BYTES(ciphertext, R_SBOX);
+        ADD_ROUND_KEY(ciphertext, (key + i));
+        MIX_COLUMNS(ciphertext, 0x0e, 0x0b, 0x0d, 0x09);
+    }
+    INV_SHIFT_ROWS(ciphertext, temp_pt);
+    memcpy(ciphertext, temp_pt, sizeof(temp_pt));
+
+    SUB_BYTES(ciphertext, R_SBOX);
+    ADD_ROUND_KEY(ciphertext, key);
 }

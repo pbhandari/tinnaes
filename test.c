@@ -132,11 +132,10 @@ test_gf_mult(void)
         uint8_t actual = gf_mult(a, b[i]);
 
         if (actual != expected[i]) {
-            printf("gf_mult:(%d, %d)\n\texpected 0x%x, actual 0x%x\n", a, b[i], expected[i], actual);
+            printf("gf_mult:(%d, %d)\n\texpected 0x%x, actual 0x%x\n",
+                    a, b[i], expected[i], actual);
             return 1;
         }
-
-        a = 0x87;
     }
 
     return 0;
