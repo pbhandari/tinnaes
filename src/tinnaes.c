@@ -174,6 +174,24 @@ do {                                                                \
 } while(0);                                                         \
 
 
+#define STR_TO_WORD_ARRAY(str, word)                                  \
+do {                                                                  \
+    word[0] = str[0]  << 24 | str[1]  << 16 | str[2]  << 8 | str[3];  \
+    word[1] = str[4]  << 24 | str[5]  << 16 | str[6]  << 8 | str[7];  \
+    word[2] = str[8]  << 24 | str[9]  << 16 | str[10] << 8 | str[11]; \
+    word[3] = str[12] << 24 | str[13] << 16 | str[14] << 8 | str[15]; \
+} while(0);                                                           \
+
+
+#define WORD_TO_STR(word, str)                  \
+do {                                            \
+    str[0] = (unsigned char)(word >> 24);    \
+    str[1] = (unsigned char)(word >> 16);    \
+    str[2] = (unsigned char)(word >> 8);     \
+    str[3] = (unsigned char)(word);          \
+} while(0);
+
+
 static
 unsigned char
 gf_mult(unsigned char a, unsigned char b) {
@@ -231,4 +249,26 @@ encrypt_block(uint32_t plaintext[4], uint32_t key[44])
 
     SUB_BYTES(plaintext, SBOX);
     ADD_ROUND_KEY(plaintext, (key + 40));
+}
+
+
+void
+encrypt(unsigned char* plaintext, unsigned char* keytext, unsigned char* cipher)
+{
+    uint32_t key[44];
+    STR_TO_WORD_ARRAY(keytext, key);
+    KEY_EXP(key);
+
+    size_t length = strlen((const char*)plaintext);
+    uint32_t plain[4];
+    for (int i = 0; i < length; i+=16) {
+        STR_TO_WORD_ARRAY((plaintext + i), plain);
+        encrypt_block(plain, key);
+
+        WORD_TO_STR(plain[0], (cipher + i + 0));
+        WORD_TO_STR(plain[1], (cipher + i + 4));
+        WORD_TO_STR(plain[2], (cipher + i + 8));
+        WORD_TO_STR(plain[3], (cipher + i + 12));
+    }
+    cipher[length] = '\0';
 }

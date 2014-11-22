@@ -17,10 +17,10 @@
 #ifndef TINNAES_H
 #define TINNAES_H
 
-unsigned char*
-encrypt(unsigned char* plaintext, unsigned char* key);
+void
+encrypt(unsigned char* plaintext, unsigned char* key, unsigned char* cipher);
 
-unsigned char*
-decrypt(unsigned char* ciphertext, unsigned char* key);
+void
+decrypt(unsigned char* ciphertext, unsigned char* key, unsigned char* plain);
 
 #endif  // TINNAES_H
