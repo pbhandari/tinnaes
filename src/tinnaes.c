@@ -272,3 +272,25 @@ encrypt(unsigned char* plaintext, unsigned char* keytext, unsigned char* cipher)
     }
     cipher[length] = '\0';
 }
+
+
+void
+decrypt(unsigned char* ciphertext, unsigned char* keytext, unsigned char* plain)
+{
+    uint32_t key[44];
+    STR_TO_WORD_ARRAY(keytext, key);
+    KEY_EXP(key);
+
+    size_t length = strlen((const char*)ciphertext);
+    uint32_t cipher[4];
+    for (int i = 0; i < length; i+=16) {
+        STR_TO_WORD_ARRAY((ciphertext + i), cipher);
+        decrypt_block(cipher, key);
+
+        WORD_TO_STR(cipher[0], (plain + i + 0));
+        WORD_TO_STR(cipher[1], (plain + i + 4));
+        WORD_TO_STR(cipher[2], (plain + i + 8));
+        WORD_TO_STR(cipher[3], (plain + i + 12));
+    }
+    plain[length] = '\0';
+}
