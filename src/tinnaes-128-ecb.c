@@ -31,7 +31,7 @@ encrypt(unsigned char* plaintext, unsigned char* keytext, unsigned char* cipher)
     uint32_t plain[4];
     uint32_t temp_pt[4] = {0, 0, 0, 0};
 
-    for (int i = 0; i < length; i+=16) {
+    for (size_t i = 0; i < length; i+=16) {
         STR_TO_WORD_ARRAY((plaintext + i), plain);
         ENCRYPT_BLOCK(plain, key, temp_pt);
 
@@ -55,7 +55,7 @@ decrypt(unsigned char* ciphertext, unsigned char* keytext, unsigned char* plain)
     uint32_t cipher[4];
     uint32_t temp_pt[4] = {0, 0, 0, 0};
 
-    for (int i = 0; i < length; i+=16) {
+    for (size_t i = 0; i < length; i+=16) {
         STR_TO_WORD_ARRAY((ciphertext + i), cipher);
         DECRYPT_BLOCK(cipher, key, temp_pt);
 
