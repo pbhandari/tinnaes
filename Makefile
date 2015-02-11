@@ -7,7 +7,8 @@ BUILDDIR := build
 TESTDIR  := test
 
 CC 		:= clang
-CFLAGS 	:= -g -Wall -pedantic -O2 -std=c99
+CFEXTRA :=
+CFLAGS 	:= -g -Wall -Wextra -Werror -pedantic -std=c99 $(CFEXTRA)
 LDFLAGS :=
 
 KEY_SIZE := 128
