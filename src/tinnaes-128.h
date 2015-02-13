@@ -155,13 +155,7 @@ do {                                                                         \
 } while(0);                                                                  \
 
 
-#define WORD_TO_STR(word, str)                                               \
-do {                                                                         \
-    str[0] = (unsigned char)(word >> 24);                                    \
-    str[1] = (unsigned char)(word >> 16);                                    \
-    str[2] = (unsigned char)(word >> 8);                                     \
-    str[3] = (unsigned char)(word);                                          \
-} while(0);
+#define WORD_TO_STR(w, s) (s[0]=w>>24, s[1]=w>>16, s[2]=w>>8, s[3]=w);      \
 
 
 #define WORD_ARRAY_TO_STR(word, str)                                         \
@@ -174,12 +168,12 @@ do {                                                                         \
 
 
 static
-unsigned char
-gf_mult(unsigned char a, unsigned char b) {
-    unsigned char p = 0;
+uint8_t
+gf_mult(uint8_t a, uint8_t b) {
+    uint8_t p = 0;
     do {
         p ^= (a * (b & 1));
-        a = ((a << 1) ^ (0x1b * ((a >> 7) & 1)));
+        a = ((a << 1) ^ (0x1b * !!(a >> 7)));
     } while (b >>= 1);
     return p;
 }
