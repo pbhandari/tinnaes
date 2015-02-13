@@ -164,43 +164,12 @@ do {                                                                         \
 } while(0);
 
 
-#define ENCRYPT_BLOCK(plaintext, key, temp_pt)                               \
+#define WORD_ARRAY_TO_STR(word, str)                                         \
 do {                                                                         \
-    ADD_ROUND_KEY(plaintext, key);                                           \
-                                                                             \
-    for(int i = 4; i < 40; i+=4) {                                           \
-        SHIFT_ROWS(plaintext, temp_pt);                                      \
-        memcpy(plaintext, temp_pt, sizeof(temp_pt));                         \
-                                                                             \
-        SUB_BYTES(plaintext, SBOX);                                          \
-        MIX_COLUMNS(plaintext, 2, 3, 1, 1);                                  \
-        ADD_ROUND_KEY(plaintext, (key + i));                                 \
-    }                                                                        \
-    SHIFT_ROWS(plaintext, temp_pt);                                          \
-    memcpy(plaintext, temp_pt, sizeof(temp_pt));                             \
-                                                                             \
-    SUB_BYTES(plaintext, SBOX);                                              \
-    ADD_ROUND_KEY(plaintext, (key + 40));                                    \
-} while(0);                                                                  \
-
-
-#define DECRYPT_BLOCK(ciphertext, key, temp_pt)                              \
-do {                                                                         \
-    ADD_ROUND_KEY(ciphertext, (key + 40));                                   \
-                                                                             \
-    for(int i = 36; i > 0; i-=4) {                                           \
-        INV_SHIFT_ROWS(ciphertext, temp_pt);                                 \
-        memcpy(ciphertext, temp_pt, sizeof(temp_pt));                        \
-                                                                             \
-        SUB_BYTES(ciphertext, R_SBOX);                                       \
-        ADD_ROUND_KEY(ciphertext, (key + i));                                \
-        MIX_COLUMNS(ciphertext, 0x0e, 0x0b, 0x0d, 0x09);                     \
-    }                                                                        \
-    INV_SHIFT_ROWS(ciphertext, temp_pt);                                     \
-    memcpy(ciphertext, temp_pt, sizeof(temp_pt));                            \
-                                                                             \
-    SUB_BYTES(ciphertext, R_SBOX);                                           \
-    ADD_ROUND_KEY(ciphertext, key);                                          \
+    WORD_TO_STR(word[0], (str + 0));                                         \
+    WORD_TO_STR(word[1], (str + 4));                                         \
+    WORD_TO_STR(word[2], (str + 8));                                         \
+    WORD_TO_STR(word[3], (str + 12));                                        \
 } while(0);                                                                  \
 
 
@@ -213,4 +182,54 @@ gf_mult(unsigned char a, unsigned char b) {
         a = ((a << 1) ^ (0x1b * ((a >> 7) & 1)));
     } while (b >>= 1);
     return p;
+}
+
+
+static
+void
+encrypt_block(uint32_t *plaintext, const uint32_t *key)
+{
+    ADD_ROUND_KEY(plaintext, key);
+    uint32_t temp_pt[4] = {0, 0, 0, 0};
+
+    for(int i = 4; i < 40; i+=4) {
+        SHIFT_ROWS(plaintext, temp_pt);
+        plaintext[0] = temp_pt[0]; plaintext[1] = temp_pt[1];
+        plaintext[2] = temp_pt[2]; plaintext[3] = temp_pt[3];
+
+        SUB_BYTES(plaintext, SBOX);
+        MIX_COLUMNS(plaintext, 2, 3, 1, 1);
+        ADD_ROUND_KEY(plaintext, (key + i));
+    }
+    SHIFT_ROWS(plaintext, temp_pt);
+    plaintext[0] = temp_pt[0]; plaintext[1] = temp_pt[1];
+    plaintext[2] = temp_pt[2]; plaintext[3] = temp_pt[3];
+
+    SUB_BYTES(plaintext, SBOX);
+    ADD_ROUND_KEY(plaintext, (key + 40));
+}
+
+
+static
+void
+decrypt_block(uint32_t *ciphertext, const uint32_t *key)
+{
+    ADD_ROUND_KEY(ciphertext, (key + 40));
+    uint32_t temp_pt[4] = {0, 0, 0, 0};
+
+    for(int i = 36; i > 0; i-=4) {
+        INV_SHIFT_ROWS(ciphertext, temp_pt);
+        ciphertext[0] = temp_pt[0]; ciphertext[1] = temp_pt[1];
+        ciphertext[2] = temp_pt[2]; ciphertext[3] = temp_pt[3];
+
+        SUB_BYTES(ciphertext, R_SBOX);
+        ADD_ROUND_KEY(ciphertext, (key + i));
+        MIX_COLUMNS(ciphertext, 0x0e, 0x0b, 0x0d, 0x09);
+    }
+    INV_SHIFT_ROWS(ciphertext, temp_pt);
+    ciphertext[0] = temp_pt[0]; ciphertext[1] = temp_pt[1];
+    ciphertext[2] = temp_pt[2]; ciphertext[3] = temp_pt[3];
+
+    SUB_BYTES(ciphertext, R_SBOX);
+    ADD_ROUND_KEY(ciphertext, key);
 }

@@ -29,18 +29,12 @@ encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher)
     size_t length = strlen((const char*)plaintext);
 
     uint32_t plain[4];
-    uint32_t temp_pt[4] = {0, 0, 0, 0};
 
     for (size_t i = 0; i < length; i+=16) {
         STR_TO_WORD_ARRAY((plaintext + i), plain);
-        ENCRYPT_BLOCK(plain, key, temp_pt);
-
-        WORD_TO_STR(plain[0], (cipher + i + 0));
-        WORD_TO_STR(plain[1], (cipher + i + 4));
-        WORD_TO_STR(plain[2], (cipher + i + 8));
-        WORD_TO_STR(plain[3], (cipher + i + 12));
+        encrypt_block(plain, key);
+        WORD_ARRAY_TO_STR(plain, (cipher + i));
     }
-    cipher[length] = '\0';
 }
 
 
@@ -53,16 +47,10 @@ decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain)
 
     size_t length = strlen((const char*)ciphertext);
     uint32_t cipher[4];
-    uint32_t temp_pt[4] = {0, 0, 0, 0};
 
     for (size_t i = 0; i < length; i+=16) {
         STR_TO_WORD_ARRAY((ciphertext + i), cipher);
-        DECRYPT_BLOCK(cipher, key, temp_pt);
-
-        WORD_TO_STR(cipher[0], (plain + i + 0));
-        WORD_TO_STR(cipher[1], (plain + i + 4));
-        WORD_TO_STR(cipher[2], (plain + i + 8));
-        WORD_TO_STR(cipher[3], (plain + i + 12));
+        decrypt_block(cipher, key);
+        WORD_ARRAY_TO_STR(cipher, (plain + i));
     }
-    plain[length] = '\0';
 }
