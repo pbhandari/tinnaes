@@ -14,20 +14,20 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "tinnaes-128.h"
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "tinnaes-128.h"
+
 void
-encrypt(unsigned char* plaintext, unsigned char* keytext, unsigned char* cipher)
+encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);
     KEY_EXP(key);
 
     size_t length = strlen((const char*)plaintext);
+
     uint32_t plain[4];
     uint32_t temp_pt[4] = {0, 0, 0, 0};
 
@@ -45,7 +45,7 @@ encrypt(unsigned char* plaintext, unsigned char* keytext, unsigned char* cipher)
 
 
 void
-decrypt(unsigned char* ciphertext, unsigned char* keytext, unsigned char* plain)
+decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);

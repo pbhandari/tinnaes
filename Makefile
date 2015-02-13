@@ -8,7 +8,7 @@ TESTDIR  := test
 
 CC 		:= clang
 CFEXTRA :=
-CFLAGS 	:= -g -Wall -Wextra -Werror -pedantic -std=c99 $(CFEXTRA)
+CFLAGS 	:= -Wall -Wextra -pedantic -Os -std=c99 $(CFEXTRA)
 LDFLAGS :=
 
 KEY_SIZE := 128
@@ -17,7 +17,7 @@ CHAINING := ecb
 all: $(BUILDDIR)/tinnaes.o
 default: $(BUILDDIR)/tinnaes.o
 
-test: $(SRCDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
+test: $(TESTDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
 	$(CC) $(CFLAGS) $< -o $(BUILDDIR)/$@ $(LDFLAGS)
 	$(BUILDDIR)/$@
 
