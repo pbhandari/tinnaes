@@ -115,43 +115,43 @@ for (int i = 0; i < 4; i++) {                                                \
 
 #define SHIFT_ROWS(state, new_state)                                         \
 do {                                                                         \
-    new_state[0] =  state[0] & 0xff000000 | state[1] & 0x00ff0000            \
-                  | state[2] & 0x0000ff00 | state[3] & 0x000000ff;           \
+    new_state[0] =  (state[0] & 0xff000000) | (state[1] & 0x00ff0000)        \
+                  | (state[2] & 0x0000ff00) | (state[3] & 0x000000ff);       \
                                                                              \
-    new_state[1] =  state[1] & 0xff000000 | state[2] & 0x00ff0000            \
-                  | state[3] & 0x0000ff00 | state[0] & 0x000000ff;           \
+    new_state[1] =  (state[1] & 0xff000000) | (state[2] & 0x00ff0000)        \
+                  | (state[3] & 0x0000ff00) | (state[0] & 0x000000ff);       \
                                                                              \
-    new_state[2] =  state[2] & 0xff000000 | state[3] & 0x00ff0000            \
-                  | state[0] & 0x0000ff00 | state[1] & 0x000000ff;           \
+    new_state[2] =  (state[2] & 0xff000000) | (state[3] & 0x00ff0000)        \
+                  | (state[0] & 0x0000ff00) | (state[1] & 0x000000ff);       \
                                                                              \
-    new_state[3] =  state[3] & 0xff000000 | state[0] & 0x00ff0000            \
-                  | state[1] & 0x0000ff00 | state[2] & 0x000000ff;           \
+    new_state[3] =  (state[3] & 0xff000000) | (state[0] & 0x00ff0000)        \
+                  | (state[1] & 0x0000ff00) | (state[2] & 0x000000ff);       \
                                                                              \
 } while(0);                                                                  \
 
 
 #define INV_SHIFT_ROWS(state, new_state)                                     \
 do {                                                                         \
-    new_state[0] =  state[0] & 0xff000000 | state[3] & 0x00ff0000            \
-                  | state[2] & 0x0000ff00 | state[1] & 0x000000ff;           \
+    new_state[0] =  (state[0] & 0xff000000) | (state[3] & 0x00ff0000)        \
+                  | (state[2] & 0x0000ff00) | (state[1] & 0x000000ff);       \
                                                                              \
-    new_state[1] =  state[1] & 0xff000000 | state[0] & 0x00ff0000            \
-                  | state[3] & 0x0000ff00 | state[2] & 0x000000ff;           \
+    new_state[1] =  (state[1] & 0xff000000) | (state[0] & 0x00ff0000)        \
+                  | (state[3] & 0x0000ff00) | (state[2] & 0x000000ff);       \
                                                                              \
-    new_state[2] =  state[2] & 0xff000000 | state[1] & 0x00ff0000            \
-                  | state[0] & 0x0000ff00 | state[3] & 0x000000ff;           \
+    new_state[2] =  (state[2] & 0xff000000) | (state[1] & 0x00ff0000)        \
+                  | (state[0] & 0x0000ff00) | (state[3] & 0x000000ff);       \
                                                                              \
-    new_state[3] =  state[3] & 0xff000000 | state[2] & 0x00ff0000            \
-                  | state[1] & 0x0000ff00 | state[0] & 0x000000ff;           \
+    new_state[3] =  (state[3] & 0xff000000) | (state[2] & 0x00ff0000)        \
+                  | (state[1] & 0x0000ff00) | (state[0] & 0x000000ff);       \
 } while(0);                                                                  \
 
 
 #define STR_TO_WORD_ARRAY(str, word)                                         \
 do {                                                                         \
-    word[0] = str[0]  << 24 | str[1]  << 16 | str[2]  << 8 | str[3];         \
-    word[1] = str[4]  << 24 | str[5]  << 16 | str[6]  << 8 | str[7];         \
-    word[2] = str[8]  << 24 | str[9]  << 16 | str[10] << 8 | str[11];        \
-    word[3] = str[12] << 24 | str[13] << 16 | str[14] << 8 | str[15];        \
+    word[0] = (str[0]  << 24) | (str[1]  << 16) | (str[2]  << 8) | str[3];   \
+    word[1] = (str[4]  << 24) | (str[5]  << 16) | (str[6]  << 8) | str[7];   \
+    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];  \
+    word[3] = (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];  \
 } while(0);                                                                  \
 
 
