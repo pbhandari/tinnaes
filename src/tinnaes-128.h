@@ -97,27 +97,20 @@ for(int i = 1, j = 4; i < 11; i++) {                                         \
 
 #define MIX_COLUMNS(state, a, b, c, d)                                       \
 for (int i = 0; i < 4; i++) {                                                \
+    uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };    \
                     /* byte one*/                                            \
-    state[i] = ((gf_mult((state[i] >> 24) & 0xff, a)                         \
-               ^ gf_mult((state[i] >> 16) & 0xff, b)                         \
-               ^ gf_mult((state[i] >> 8)  & 0xff, c)                         \
-               ^ gf_mult((state[i])       & 0xff, d)) & 0xff) << 24          \
+    state[i] = ((gf_mult(st[0], a) ^ gf_mult(st[1], b)                       \
+               ^ gf_mult(st[2], c) ^ gf_mult(st[3], d)) & 0xff) << 24        \
                     /* byte two */                                           \
-             | ((gf_mult((state[i] >> 24) & 0xff, d)                         \
-               ^ gf_mult((state[i] >> 16) & 0xff, a)                         \
-               ^ gf_mult((state[i] >> 8)  & 0xff, b)                         \
-               ^ gf_mult((state[i])       & 0xff, c)) & 0xff) << 16          \
+             | ((gf_mult(st[0], d) ^ gf_mult(st[1], a)                       \
+               ^ gf_mult(st[2], b) ^ gf_mult(st[3], c)) & 0xff) << 16        \
                     /* byte three */                                         \
-             | ((gf_mult((state[i] >> 24) & 0xff, c)                         \
-               ^ gf_mult((state[i] >> 16) & 0xff, d)                         \
-               ^ gf_mult((state[i] >> 8)  & 0xff, a)                         \
-               ^ gf_mult((state[i])       & 0xff, b)) & 0xff) << 8           \
+             | ((gf_mult(st[0], c) ^ gf_mult(st[1], d)                       \
+               ^ gf_mult(st[2], a) ^ gf_mult(st[3], b)) & 0xff) << 8         \
                     /* byte four */                                          \
-             | ((gf_mult((state[i] >> 24) & 0xff, b)                         \
-               ^ gf_mult((state[i] >> 16) & 0xff, c)                         \
-               ^ gf_mult((state[i] >> 8)  & 0xff, d)                         \
-               ^ gf_mult((state[i])       & 0xff, a)) & 0xff);               \
-}                                                                            \
+             | ((gf_mult(st[0], b) ^ gf_mult(st[1], c)                       \
+               ^ gf_mult(st[2], d) ^ gf_mult(st[3], a)) & 0xff);             \
+}
 
 
 #define SHIFT_ROWS(state, new_state)                                         \
