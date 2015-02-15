@@ -25,6 +25,9 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%-$(KEY_SIZE)-$(CHAINING).c $(INCDIR)/%-$(KEY_SIZE).h
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $< -o $@ $(LDFLAGS)
 
-.PHONY: clean
+.PHONY: clean tags
 clean:
 	-@rm $(BUILDDIR)/*.o $(BUILDDIR)/test || true
+
+tags:
+	ctags -R --extra=+f $(SRCDIR) $(TESTDIR)

@@ -24,7 +24,7 @@ encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);
-    KEY_EXP(key);
+    key_expansion(key);
 
     size_t length = strlen((const char*)plaintext);
 
@@ -43,7 +43,7 @@ decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);
-    KEY_EXP(key);
+    key_expansion(key);
 
     size_t length = strlen((const char*)ciphertext);
     uint32_t cipher[4];
