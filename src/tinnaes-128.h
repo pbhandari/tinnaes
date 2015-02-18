@@ -17,8 +17,8 @@
 #define STR_TO_WORD_ARRAY(str, word)                                         \
 do {                                                                         \
     word[0] = (str[0]  << 24) | (str[1]  << 16) | (str[2]  << 8) | str[3];   \
-    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];  \
     word[1] = (str[4]  << 24) | (str[5]  << 16) | (str[6]  << 8) | str[7];   \
+    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];  \
     word[3] = (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];  \
 } while(0);                                                                  \
 
@@ -87,18 +87,27 @@ static const uint8_t RCON[] = {
 };
 
 static
+inline
 uint8_t
-mult(uint8_t a, uint8_t b) {
-    uint8_t p = 0;
-    do {
-        p ^= (a * (b & 1));
-        a = ((a << 1) ^ (0x1b * !!(a & 128)));
-    } while (b >>= 1);
-    return p;
+mult2(uint8_t a)
+{
+    return (a << 1) ^ (0x1b * !!(a & 128));
 }
 
 
 static
+uint8_t
+mult(uint8_t a, uint8_t b) {
+    uint8_t m[3] = { mult2(a), mult2(m[0]), mult2(m[1]) };
+    return    (a    * !!(b & 1))
+            ^ (m[0] * !!(b & 2))
+            ^ (m[1] * !!(b & 4))
+            ^ (m[2] * !!(b & 8));
+}
+
+
+static
+inline
 void
 add_round_key(uint32_t *state, const uint32_t *round_key)
 {
@@ -108,6 +117,7 @@ add_round_key(uint32_t *state, const uint32_t *round_key)
 
 
 static
+inline
 void
 sub_bytes(uint32_t *state, const sbox_t sb)
 {
@@ -120,30 +130,47 @@ static
 void
 key_expansion(uint32_t* round_key)
 {
-    uint32_t k = 0;
-    for(uint8_t i = 1, j = 4; i < 11; i++) {
-        k = SBOX_AT(LSHIFT(round_key[j-1], 1), sbox) ^ (RCON[i] << 24);
-        round_key[j] = round_key[j - 4] ^ k;                j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
+    for(uint8_t i = 1, j = 4; i < 11; i++, j+=4) {
+        round_key[j] = SBOX_AT(LSHIFT(round_key[j-1], 1), sbox)
+                      ^ (RCON[i] << 24) ^ round_key[j-4];
+
+        round_key[j + 1] = round_key[j - 3] ^ round_key[j];
+        round_key[j + 2] = round_key[j - 2] ^ round_key[j + 1];
+        round_key[j + 3] = round_key[j - 1] ^ round_key[j + 2];
     }
 }
 
+
 static
 void
-mix_columns(uint32_t* state, const uint8_t a, const uint8_t b, const uint8_t c,
-                             const uint8_t d)
+inv_mix_columns(uint32_t* state)
 {
     uint8_t tmp[4];
     for (int i = 0; i < 4; i++) {
         uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };
-        tmp[0] = mult(st[0], a) ^ mult(st[1], b) ^ mult(st[2], c) ^ mult(st[3], d);
-        tmp[2] = mult(st[0], c) ^ mult(st[1], d) ^ mult(st[2], a) ^ mult(st[3], b);
-        tmp[1] = mult(st[0], d) ^ mult(st[1], a) ^ mult(st[2], b) ^ mult(st[3], c);
-        tmp[3] = mult(st[0], b) ^ mult(st[1], c) ^ mult(st[2], d) ^ mult(st[3], a);
+        tmp[0] = mult(st[0], 0xe) ^ mult(st[1], 0xb) ^ mult(st[2], 0xd) ^ mult(st[3], 0x9);
+        tmp[2] = mult(st[0], 0xd) ^ mult(st[1], 0x9) ^ mult(st[2], 0xe) ^ mult(st[3], 0xb);
+        tmp[1] = mult(st[0], 0x9) ^ mult(st[1], 0xe) ^ mult(st[2], 0xb) ^ mult(st[3], 0xd);
+        tmp[3] = mult(st[0], 0xb) ^ mult(st[1], 0xd) ^ mult(st[2], 0x9) ^ mult(st[3], 0xe);
 
         state[i] = tmp[0] << 24 | tmp[1] << 16 | tmp[2] << 8 | tmp[3];
+    }
+}
+
+
+static
+void
+mix_columns(uint32_t* state)
+{
+    for (int i = 0; i < 4; i++) {
+        uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };
+        uint8_t mt[] = { mult2(st[0]), mult2(st[1]), mult2(st[2]), mult2(st[3]) };
+
+        // mt[x] ^ st[x] == mult(st[x] , 3)
+        state[i] = (mt[0]       ^ mt[1]^st[1] ^ st[2]       ^ st[3])       << 24
+                 | (st[0]       ^ mt[1]       ^ mt[2]^st[2] ^ st[3])       << 16
+                 | (st[0]       ^ st[1]       ^ mt[2]       ^ mt[3]^st[3]) << 8
+                 | (mt[0]^st[0] ^ st[1]       ^ st[2]       ^ mt[3]);
     }
 }
 
@@ -199,17 +226,17 @@ static
 void
 encrypt_block(uint32_t *plaintext, const uint32_t *key)
 {
-    add_round_key(plaintext, key);
+    add_round_key(plaintext, &key[0]);
     for(int i = 4; i < 40; i+=4) {
         shift_rows(plaintext);
 
         sub_bytes(plaintext, sbox);
-        mix_columns(plaintext, 2, 3, 1, 1);
-        add_round_key(plaintext, (key + i));
+        mix_columns(plaintext);
+        add_round_key(plaintext, &key[i]);
     }
     shift_rows(plaintext);
     sub_bytes(plaintext, sbox);
-    add_round_key(plaintext, (key + 40));
+    add_round_key(plaintext, &key[40]);
 }
 
 
@@ -217,17 +244,17 @@ static
 void
 decrypt_block(uint32_t *ciphertext, const uint32_t *key)
 {
-    add_round_key(ciphertext, (key + 40));
+    add_round_key(ciphertext, &key[40]);
 
     for(int i = 36; i > 0; i-=4) {
         inv_shift_rows(ciphertext);
 
         sub_bytes(ciphertext, rev_sbox);
-        add_round_key(ciphertext, (key + i));
-        mix_columns(ciphertext, 0x0e, 0x0b, 0x0d, 0x09);
+        add_round_key(ciphertext, &key[i]);
+        inv_mix_columns(ciphertext);
     }
     inv_shift_rows(ciphertext);
 
     sub_bytes(ciphertext, rev_sbox);
-    add_round_key(ciphertext, key);
+    add_round_key(ciphertext, &key[0]);
 }
