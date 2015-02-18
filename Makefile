@@ -4,7 +4,7 @@ BINDIR = $(PREFIX)/bin
 SRCDIR   := src
 INCDIR   := $(SRCDIR)
 BUILDDIR := build
-TESTDIR  := test
+TESTDIR  := $(SRCDIR)
 
 CC 		:= clang
 CFEXTRA :=
@@ -24,13 +24,14 @@ prof: CC=gcc
 prof: CFLAGS+=-g -DNITER=1000000
 prof: LDFLAGS=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
+prof: export CPUPROFILE=$(PROF_FILE)
 prof: all test
-	CPUPROFILE=$(PROF_FLAGS) ./$(BUILDDIR)/test
-	pprof $(PFFLAGS) $(BUILDDIR)/test $(PROF_FLAGS)
+	pprof $(PROF_FLAGS) $(BUILDDIR)/test $(PROF_FILE)
 	size $(BUILDDIR)/test
 
 test: $(TESTDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
 	$(CC) $(CFLAGS) $< -o $(BUILDDIR)/$@ $(LDFLAGS)
+	./$(BUILDDIR)/test
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%-$(KEY_SIZE)-$(CHAINING).c $(INCDIR)/%-$(KEY_SIZE).h
 	@mkdir -p $(dir $@)
