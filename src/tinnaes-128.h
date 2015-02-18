@@ -23,16 +23,14 @@ do {                                                                         \
 } while(0);                                                                  \
 
 
-#define WORD_TO_STR(w, s) (s[0]=w>>24, s[1]=w>>16, s[2]=w>>8, s[3]=w);      \
-
-
-#define WORD_ARRAY_TO_STR(word, str)                                         \
+#define WORD_ARRAY_TO_STR(wd, st)                                            \
 do {                                                                         \
-    WORD_TO_STR(word[0], (str + 0));                                         \
-    WORD_TO_STR(word[2], (str + 8));                                         \
-    WORD_TO_STR(word[1], (str + 4));                                         \
-    WORD_TO_STR(word[3], (str + 12));                                        \
+    st[0] = wd[0]>>24; st[1] = wd[0]>>16; st[2]  = wd[0]>>8; st[3]  = wd[0]; \
+    st[4] = wd[1]>>24; st[5] = wd[1]>>16; st[6]  = wd[1]>>8; st[7]  = wd[1]; \
+    st[8] = wd[2]>>24; st[9] = wd[2]>>16; st[10] = wd[2]>>8; st[11] = wd[2]; \
+    st[12]= wd[3]>>24; st[13]= wd[3]>>16; st[14] = wd[3]>>8; st[15] = wd[3]; \
 } while(0);                                                                  \
+
 
 #define LSHIFT(word, n) ((word << (n*8)) | (word >> ((4-n) * 8)))
 #define RSHIFT(word, n) ((word >> (n*8)) | (word << ((4-n) * 8)))
