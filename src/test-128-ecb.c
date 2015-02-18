@@ -15,7 +15,7 @@
  */
 
 #ifndef NITER
-#define NITER 1000000
+#define NITER 1
 #endif
 
 #include "../src/tinnaes-128-ecb.c"
