@@ -152,16 +152,19 @@ static
 void
 shift_rows(uint32_t* state)
 {
-    uint32_t tmp[4] = { 0, 0, 0, 0 };
+    uint32_t tmp[] = {
+        (state[0] & 0xff000000) | (state[1] & 0x00ff0000)
+      | (state[2] & 0x0000ff00) | (state[3] & 0x000000ff),
 
-    tmp[0] = (state[0] & 0xff000000) | (state[1] & 0x00ff0000)
-           | (state[2] & 0x0000ff00) | (state[3] & 0x000000ff);
-    tmp[2] = (state[2] & 0xff000000) | (state[3] & 0x00ff0000)
-           | (state[0] & 0x0000ff00) | (state[1] & 0x000000ff);
-    tmp[1] = (state[1] & 0xff000000) | (state[2] & 0x00ff0000)
-           | (state[3] & 0x0000ff00) | (state[0] & 0x000000ff);
-    tmp[3] = (state[3] & 0xff000000) | (state[0] & 0x00ff0000)
-           | (state[1] & 0x0000ff00) | (state[2] & 0x000000ff);
+        (state[1] & 0xff000000) | (state[2] & 0x00ff0000)
+      | (state[3] & 0x0000ff00) | (state[0] & 0x000000ff),
+
+        (state[2] & 0xff000000) | (state[3] & 0x00ff0000)
+      | (state[0] & 0x0000ff00) | (state[1] & 0x000000ff),
+
+        (state[3] & 0xff000000) | (state[0] & 0x00ff0000)
+      | (state[1] & 0x0000ff00) | (state[2] & 0x000000ff),
+    };
 
     state[0] = tmp[0]; state[2] = tmp[2];
     state[1] = tmp[1]; state[3] = tmp[3];
@@ -172,16 +175,19 @@ static
 void
 inv_shift_rows(uint32_t* state)
 {
-    uint32_t tmp[4] = { 0, 0, 0, 0 };
+    uint32_t tmp[] = {
+          (state[0] & 0xff000000) | (state[3] & 0x00ff0000)
+        | (state[2] & 0x0000ff00) | (state[1] & 0x000000ff),
 
-    tmp[0] =  (state[0] & 0xff000000) | (state[3] & 0x00ff0000)
-            | (state[2] & 0x0000ff00) | (state[1] & 0x000000ff);
-    tmp[2] =  (state[2] & 0xff000000) | (state[1] & 0x00ff0000)
-            | (state[0] & 0x0000ff00) | (state[3] & 0x000000ff);
-    tmp[1] =  (state[1] & 0xff000000) | (state[0] & 0x00ff0000)
-            | (state[3] & 0x0000ff00) | (state[2] & 0x000000ff);
-    tmp[3] =  (state[3] & 0xff000000) | (state[2] & 0x00ff0000)
-            | (state[1] & 0x0000ff00) | (state[0] & 0x000000ff);
+          (state[1] & 0xff000000) | (state[0] & 0x00ff0000)
+        | (state[3] & 0x0000ff00) | (state[2] & 0x000000ff),
+
+          (state[2] & 0xff000000) | (state[1] & 0x00ff0000)
+        | (state[0] & 0x0000ff00) | (state[3] & 0x000000ff),
+
+          (state[3] & 0xff000000) | (state[2] & 0x00ff0000)
+        | (state[1] & 0x0000ff00) | (state[0] & 0x000000ff),
+    };
 
     state[0] = tmp[0]; state[2] = tmp[2];
     state[1] = tmp[1]; state[3] = tmp[3];
