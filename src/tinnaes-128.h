@@ -129,13 +129,6 @@ key_expansion(uint32_t* round_key)
         round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
         round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
         round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-
-        i++;
-        k = SBOX_AT(LSHIFT(round_key[j-1], 1), sbox) ^ (RCON[i] << 24);
-        round_key[j] = round_key[j - 4] ^ k;                j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
-        round_key[j] = round_key[j - 4] ^ round_key[j - 1]; j++;
     }
 }
 
