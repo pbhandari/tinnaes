@@ -29,6 +29,10 @@ prof: all test
 	pprof $(PROF_FLAGS) $(BUILDDIR)/test $(PROF_FILE)
 	size $(BUILDDIR)/test
 
+cachegrind: CFLAGS+=-g -DNITER=100000
+cachegrind: all test
+	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out $(BUILDDIR)/test
+
 test: $(TESTDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
 	$(CC) $(CFLAGS) $< -o $(BUILDDIR)/$@ $(LDFLAGS)
 	./$(BUILDDIR)/test
@@ -37,9 +41,10 @@ $(BUILDDIR)/%.o: $(SRCDIR)/%-$(KEY_SIZE)-$(CHAINING).c $(INCDIR)/%-$(KEY_SIZE).h
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) $< -o $@ $(LDFLAGS)
 
-.PHONY: clean tags prof
 clean:
 	-@rm $(BUILDDIR)/*.o $(BUILDDIR)/test $(PROF_FILE) || true
 
 tags:
 	ctags -R --extra=+f $(SRCDIR) $(TESTDIR)
+
+.PHONY: clean tags prof cachegrind
