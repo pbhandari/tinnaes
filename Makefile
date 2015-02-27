@@ -6,10 +6,9 @@ INCDIR   := $(SRCDIR)
 BUILDDIR := build
 TESTDIR  := $(SRCDIR)
 
-CC 		:= clang
-CFEXTRA :=
-CFLAGS 	:= -Wall -Wextra -pedantic -funroll-loops -Os -std=c99 $(CFEXTRA)
-LDFLAGS :=
+CC := clang
+override CFLAGS  := -Wall -Wextra -pedantic -funroll-loops -Os -std=c99 $(CFLAGS)
+override LDFLAGS := $(LDFLAGS)
 
 PROF_FLAGS := --text
 PROF_FILE := tinnaes.prof
@@ -22,7 +21,7 @@ default: $(BUILDDIR)/tinnaes.o
 
 prof: CC=gcc
 prof: CFLAGS+=-g -DNITER=1000000
-prof: LDFLAGS=-lprofiler
+prof: LDFLAGS+=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
 prof: export CPUPROFILE=$(PROF_FILE)
 prof: all test
