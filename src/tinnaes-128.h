@@ -111,8 +111,10 @@ inline
 void
 add_round_key(uint32_t *state, const uint32_t *round_key)
 {
-    state[0] ^= round_key[0]; state[2] ^= round_key[2];
-    state[1] ^= round_key[1]; state[3] ^= round_key[3];
+    state[0] ^= round_key[0];
+    state[1] ^= round_key[1];
+    state[2] ^= round_key[2];
+    state[3] ^= round_key[3];
 }
 
 
@@ -121,8 +123,10 @@ inline
 void
 sub_bytes(uint32_t *state, const sbox_t sb)
 {
-    state[0] = SBOX_AT(state[0], sb); state[2] = SBOX_AT(state[2], sb);
-    state[1] = SBOX_AT(state[1], sb); state[3] = SBOX_AT(state[3], sb);
+    state[0] = SBOX_AT(state[0], sb);
+    state[1] = SBOX_AT(state[1], sb);
+    state[2] = SBOX_AT(state[2], sb);
+    state[3] = SBOX_AT(state[3], sb);
 }
 
 
