@@ -36,8 +36,8 @@ do {                                                                         \
 #define RSHIFT(word, n) ((word >> (n*8)) | (word << ((4-n) * 8)))
 
 #define SBOX_AT(idx, sbox)                                                   \
-    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) |   \
-     (sbox[0xff & (idx >>  8)] <<  8) | (sbox[0xff & (idx      )]      ))
+    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16)     \
+    | (sbox[0xff & (idx >>  8)] <<  8) | (sbox[0xff & (idx      )]    ))
 
 typedef uint8_t sbox_t[256];
 
