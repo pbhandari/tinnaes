@@ -42,7 +42,7 @@ do {                                                                           \
 typedef uint8_t sbox_t[256];
 
 static const sbox_t sbox = {
-  // 0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+    // 0   1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,  // 0
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,  // 1
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,  // 2
@@ -62,7 +62,7 @@ static const sbox_t sbox = {
 };
 
 static const sbox_t rev_sbox = {
-  // 0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+    // 0   1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,  // 0
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,  // 1
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,  // 2
@@ -82,12 +82,12 @@ static const sbox_t rev_sbox = {
 };
 
 static const uint8_t RCON[] = {
-  // 0     1     2     3     4     5     6     7     8     9     A
+    // 0   1     2     3     4     5     6     7     8     9     A
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
 };
 
 static const uint8_t mult2[256] = {
-  // 0     1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
+    // 0   1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
     0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e,  // 0
     0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e,  // 1
     0x40, 0x42, 0x44, 0x46, 0x48, 0x4a, 0x4c, 0x4e, 0x50, 0x52, 0x54, 0x56, 0x58, 0x5a, 0x5c, 0x5e,  // 2
@@ -137,7 +137,8 @@ key_expansion(uint32_t* round_key)
 {
     for(uint8_t i = 1, j = 4; i < 11; i++, j+=4) {
         round_key[j] = SBOX_AT(LSHIFT(round_key[j-1], 1), sbox)
-                      ^ (RCON[i] << 24) ^ round_key[j-4];
+                       ^ (RCON[i] << 24)
+                       ^ round_key[j-4];
 
         round_key[j + 1] = round_key[j - 3] ^ round_key[j];
         round_key[j + 2] = round_key[j - 2] ^ round_key[j + 1];
@@ -148,14 +149,14 @@ key_expansion(uint32_t* round_key)
 
 static
 uint8_t
-mult(uint8_t a, uint8_t b) {
+mult(uint8_t a, uint8_t b)
+{
     uint8_t m[3] = { mult2[a], mult2[m[0]], mult2[m[1]] };
-    return    (a    * !!(b & 1))
-            ^ (m[0] * !!(b & 2))
-            ^ (m[1] * !!(b & 4))
-            ^ (m[2] * !!(b & 8));
+    return (  a    * !!(b & 1))
+           ^ (m[0] * !!(b & 2))
+           ^ (m[1] * !!(b & 4))
+           ^ (m[2] * !!(b & 8));
 }
-
 
 
 static
@@ -181,14 +182,14 @@ void
 mix_columns(uint32_t* state)
 {
     for (int i = 0; i < 4; i++) {
-        uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8,  state[i] };
-        uint8_t mt[] = { mult2[st[0]], mult2[st[1]], mult2[st[2]], mult2[st[3]] };
+        uint8_t s[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };
+        uint8_t m[] = { mult2[s[0]],  mult2[s[1]],  mult2[s[2]], mult2[s[3]] };
 
         // mt[x] ^ st[x] == mult(st[x] , 3)
-        state[i] = (mt[0]       ^ mt[1]^st[1] ^ st[2]       ^ st[3])       << 24
-                 | (st[0]       ^ mt[1]       ^ mt[2]^st[2] ^ st[3])       << 16
-                 | (st[0]       ^ st[1]       ^ mt[2]       ^ mt[3]^st[3]) << 8
-                 | (mt[0]^st[0] ^ st[1]       ^ st[2]       ^ mt[3]);
+        state[i] = (  m[0]      ^ m[1]^s[1] ^ s[2]      ^ s[3])       << 24
+                   | (s[0]      ^ m[1]      ^ m[2]^s[2] ^ s[3])       << 16
+                   | (s[0]      ^ s[1]      ^ m[2]      ^ m[3]^s[3])  << 8
+                   | (m[0]^s[0] ^ s[1]      ^ s[2]      ^ m[3]);
     }
 }
 
@@ -198,21 +199,23 @@ void
 shift_rows(uint32_t* state)
 {
     uint32_t tmp[] = {
-        (state[0] & 0xff000000) | (state[1] & 0x00ff0000)
-      | (state[2] & 0x0000ff00) | (state[3] & 0x000000ff),
+        (  state[0] & 0xff000000) | (state[1] & 0x00ff0000)
+        | (state[2] & 0x0000ff00) | (state[3] & 0x000000ff),
 
-        (state[1] & 0xff000000) | (state[2] & 0x00ff0000)
-      | (state[3] & 0x0000ff00) | (state[0] & 0x000000ff),
+        (  state[1] & 0xff000000) | (state[2] & 0x00ff0000)
+        | (state[3] & 0x0000ff00) | (state[0] & 0x000000ff),
 
-        (state[2] & 0xff000000) | (state[3] & 0x00ff0000)
-      | (state[0] & 0x0000ff00) | (state[1] & 0x000000ff),
+        (  state[2] & 0xff000000) | (state[3] & 0x00ff0000)
+        | (state[0] & 0x0000ff00) | (state[1] & 0x000000ff),
 
-        (state[3] & 0xff000000) | (state[0] & 0x00ff0000)
-      | (state[1] & 0x0000ff00) | (state[2] & 0x000000ff),
+        (  state[3] & 0xff000000) | (state[0] & 0x00ff0000)
+        | (state[1] & 0x0000ff00) | (state[2] & 0x000000ff),
     };
 
-    state[0] = tmp[0]; state[2] = tmp[2];
-    state[1] = tmp[1]; state[3] = tmp[3];
+    state[0] = tmp[0];
+    state[1] = tmp[1];
+    state[2] = tmp[2];
+    state[3] = tmp[3];
 }
 
 
@@ -221,21 +224,23 @@ void
 inv_shift_rows(uint32_t* state)
 {
     uint32_t tmp[] = {
-          (state[0] & 0xff000000) | (state[3] & 0x00ff0000)
+        (  state[0] & 0xff000000) | (state[3] & 0x00ff0000)
         | (state[2] & 0x0000ff00) | (state[1] & 0x000000ff),
 
-          (state[1] & 0xff000000) | (state[0] & 0x00ff0000)
+        (  state[1] & 0xff000000) | (state[0] & 0x00ff0000)
         | (state[3] & 0x0000ff00) | (state[2] & 0x000000ff),
 
-          (state[2] & 0xff000000) | (state[1] & 0x00ff0000)
+        (  state[2] & 0xff000000) | (state[1] & 0x00ff0000)
         | (state[0] & 0x0000ff00) | (state[3] & 0x000000ff),
 
-          (state[3] & 0xff000000) | (state[2] & 0x00ff0000)
+        (  state[3] & 0xff000000) | (state[2] & 0x00ff0000)
         | (state[1] & 0x0000ff00) | (state[0] & 0x000000ff),
     };
 
-    state[0] = tmp[0]; state[2] = tmp[2];
-    state[1] = tmp[1]; state[3] = tmp[3];
+    state[0] = tmp[0];
+    state[1] = tmp[1];
+    state[2] = tmp[2];
+    state[3] = tmp[3];
 
 }
 
