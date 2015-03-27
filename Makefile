@@ -20,7 +20,7 @@ all: $(BUILDDIR)/tinnaes.o
 default: $(BUILDDIR)/tinnaes.o
 
 prof: CC=gcc
-prof: CFLAGS+=-g -DNITER=1000000
+prof: CFLAGS+=-g -DNITER=1""000""000
 prof: LDFLAGS+=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
 prof: export CPUPROFILE=$(PROF_FILE)
@@ -28,7 +28,7 @@ prof: all test
 	pprof $(PROF_FLAGS) $(BUILDDIR)/test $(PROF_FILE)
 	size $(BUILDDIR)/test
 
-cachegrind: CFLAGS+=-g -DNITER=100000
+cachegrind: CFLAGS+=-g -DNITER=100""000
 cachegrind: all test
 	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out $(BUILDDIR)/test
 
