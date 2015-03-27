@@ -14,22 +14,22 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define STR_TO_WORD_ARRAY(str, word)                                         \
-do {                                                                         \
-    word[0] = (str[0]  << 24) | (str[1]  << 16) | (str[2]  << 8) | str[3];   \
-    word[1] = (str[4]  << 24) | (str[5]  << 16) | (str[6]  << 8) | str[7];   \
-    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];  \
-    word[3] = (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];  \
-} while(0);                                                                  \
+#define STR_TO_WORD_ARRAY(str, word)                                           \
+do {                                                                           \
+    word[0] = (str[0]  << 24) | (str[1]  << 16) | (str[2]  << 8) | str[3];     \
+    word[1] = (str[4]  << 24) | (str[5]  << 16) | (str[6]  << 8) | str[7];     \
+    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];    \
+    word[3] = (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];    \
+} while(0);                                                                    \
 
 
-#define WORD_ARRAY_TO_STR(wd, st)                                            \
-do {                                                                         \
-    st[0] = wd[0]>>24; st[1] = wd[0]>>16; st[2]  = wd[0]>>8; st[3]  = wd[0]; \
-    st[4] = wd[1]>>24; st[5] = wd[1]>>16; st[6]  = wd[1]>>8; st[7]  = wd[1]; \
-    st[8] = wd[2]>>24; st[9] = wd[2]>>16; st[10] = wd[2]>>8; st[11] = wd[2]; \
-    st[12]= wd[3]>>24; st[13]= wd[3]>>16; st[14] = wd[3]>>8; st[15] = wd[3]; \
-} while(0);                                                                  \
+#define WORD_ARRAY_TO_STR(wd, st)                                              \
+do {                                                                           \
+    st[0]  = wd[0]>>24; st[1]  = wd[0]>>16; st[2]  = wd[0]>>8; st[3]  = wd[0]; \
+    st[4]  = wd[1]>>24; st[5]  = wd[1]>>16; st[6]  = wd[1]>>8; st[7]  = wd[1]; \
+    st[8]  = wd[2]>>24; st[9]  = wd[2]>>16; st[10] = wd[2]>>8; st[11] = wd[2]; \
+    st[12] = wd[3]>>24; st[13] = wd[3]>>16; st[14] = wd[3]>>8; st[15] = wd[3]; \
+} while(0);                                                                    \
 
 
 #define LSHIFT(word, n) ((word << (n*8)) | (word >> ((4-n) * 8)))
@@ -88,26 +88,6 @@ static const uint8_t RCON[] = {
 
 static
 inline
-uint8_t
-mult2(uint8_t a)
-{
-    return (a << 1) ^ (0x1b * !!(a & 128));
-}
-
-
-static
-uint8_t
-mult(uint8_t a, uint8_t b) {
-    uint8_t m[3] = { mult2(a), mult2(m[0]), mult2(m[1]) };
-    return    (a    * !!(b & 1))
-            ^ (m[0] * !!(b & 2))
-            ^ (m[1] * !!(b & 4))
-            ^ (m[2] * !!(b & 8));
-}
-
-
-static
-inline
 void
 add_round_key(uint32_t *state, const uint32_t *round_key)
 {
@@ -144,18 +124,40 @@ key_expansion(uint32_t* round_key)
     }
 }
 
+static
+inline
+uint8_t
+mult2(uint8_t a)
+{
+    return (a << 1) ^ (0x1b * !!(a & 128));
+}
+
+
+static
+uint8_t
+mult(uint8_t a, uint8_t b) {
+    uint8_t m[3] = { mult2(a), mult2(m[0]), mult2(m[1]) };
+    return    (a    * !!(b & 1))
+            ^ (m[0] * !!(b & 2))
+            ^ (m[1] * !!(b & 4))
+            ^ (m[2] * !!(b & 8));
+}
+
+
 
 static
 void
 inv_mix_columns(uint32_t* state)
 {
-    uint8_t tmp[4];
     for (int i = 0; i < 4; i++) {
-        uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };
-        tmp[0] = mult(st[0], 0xe) ^ mult(st[1], 0xb) ^ mult(st[2], 0xd) ^ mult(st[3], 0x9);
-        tmp[2] = mult(st[0], 0xd) ^ mult(st[1], 0x9) ^ mult(st[2], 0xe) ^ mult(st[3], 0xb);
-        tmp[1] = mult(st[0], 0x9) ^ mult(st[1], 0xe) ^ mult(st[2], 0xb) ^ mult(st[3], 0xd);
-        tmp[3] = mult(st[0], 0xb) ^ mult(st[1], 0xd) ^ mult(st[2], 0x9) ^ mult(st[3], 0xe);
+        uint8_t st[] = { (uint8_t)(state[i]>>24), (uint8_t)(state[i]>>16),
+                         (uint8_t)(state[i]>>8),  (uint8_t)(state[i]) };
+        uint8_t tmp[] = {
+            (uint8_t)(mult(st[0], 0xe) ^ mult(st[1], 0xb) ^ mult(st[2], 0xd) ^ mult(st[3], 0x9)),
+            (uint8_t)(mult(st[0], 0x9) ^ mult(st[1], 0xe) ^ mult(st[2], 0xb) ^ mult(st[3], 0xd)),
+            (uint8_t)(mult(st[0], 0xd) ^ mult(st[1], 0x9) ^ mult(st[2], 0xe) ^ mult(st[3], 0xb)),
+            (uint8_t)(mult(st[0], 0xb) ^ mult(st[1], 0xd) ^ mult(st[2], 0x9) ^ mult(st[3], 0xe)),
+        };
 
         state[i] = tmp[0] << 24 | tmp[1] << 16 | tmp[2] << 8 | tmp[3];
     }
@@ -167,7 +169,8 @@ void
 mix_columns(uint32_t* state)
 {
     for (int i = 0; i < 4; i++) {
-        uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8, state[i] };
+        uint8_t st[] = { (uint8_t)(state[i]>>24), (uint8_t)(state[i]>>16),
+                         (uint8_t)(state[i]>>8),  (uint8_t)(state[i]) };
         uint8_t mt[] = { mult2(st[0]), mult2(st[1]), mult2(st[2]), mult2(st[3]) };
 
         // mt[x] ^ st[x] == mult(st[x] , 3)
