@@ -20,13 +20,12 @@
 #include "tinnaes-128.h"
 
 void
-encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher)
+encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher,
+        size_t length)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);
     key_expansion(key);
-
-    size_t length = strlen((const char*)plaintext);
 
     uint32_t plain[4];
 
@@ -39,13 +38,13 @@ encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher)
 
 
 void
-decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain)
+decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain,
+        size_t length)
 {
     uint32_t key[44];
     STR_TO_WORD_ARRAY(keytext, key);
     key_expansion(key);
 
-    size_t length = strlen((const char*)ciphertext);
     uint32_t cipher[4];
 
     for (size_t i = 0; i < length; i+=16) {
