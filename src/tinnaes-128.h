@@ -110,7 +110,7 @@ static const uint8_t mult2[256] = {
 static
 inline
 void
-add_round_key(uint32_t *state, const uint32_t *round_key)
+add_round_key(uint32_t *restrict state, const uint32_t *restrict round_key)
 {
     state[0] ^= round_key[0];
     state[1] ^= round_key[1];
@@ -165,6 +165,7 @@ inv_mix_columns(uint32_t* state)
 {
     for (int i = 0; i < 4; i++) {
         uint8_t st[] = { state[i]>>24, state[i]>>16, state[i]>>8,  state[i] };
+        // XXX: if I don't cast to uint8_t, values are wrong.
         uint8_t tmp[] = {
             (uint8_t)(mult(st[0], 0xe) ^ mult(st[1], 0xb) ^ mult(st[2], 0xd) ^ mult(st[3], 0x9)),
             (uint8_t)(mult(st[0], 0x9) ^ mult(st[1], 0xe) ^ mult(st[2], 0xb) ^ mult(st[3], 0xd)),
@@ -247,7 +248,7 @@ inv_shift_rows(uint32_t* state)
 
 static
 void
-encrypt_block(uint32_t *plaintext, const uint32_t *key)
+encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key)
 {
     add_round_key(plaintext, &key[0]);
     for(int i = 4; i < 40; i+=4) {
@@ -265,7 +266,7 @@ encrypt_block(uint32_t *plaintext, const uint32_t *key)
 
 static
 void
-decrypt_block(uint32_t *ciphertext, const uint32_t *key)
+decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key)
 {
     add_round_key(ciphertext, &key[40]);
 
