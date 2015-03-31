@@ -38,7 +38,7 @@ test: $(TESTDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%-$(KEY_SIZE)-$(CHAINING).c $(INCDIR)/%-$(KEY_SIZE).h
 	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) $< -o $@ $(LDFLAGS)
+	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
 	-@rm $(BUILDDIR)/*.o $(BUILDDIR)/test $(PROF_FILE) || true
