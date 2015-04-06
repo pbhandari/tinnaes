@@ -19,11 +19,17 @@
 #endif
 
 
-#include "../src/tinnaes-128-ecb.c"
+#include "tinnaes-128.h"
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <sys/resource.h>
+
+void
+encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher,
+        size_t length);
+void
+decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain,
+        size_t length);
 
 static const unsigned char key[]    =
 { 0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,};
@@ -56,6 +62,8 @@ test_decrypt(unsigned char *retbuf)
 int
 main(void)
 {
+    struct rusage usage;
+
     unsigned char encbuf[sizeof(plain)];
     unsigned char decbuf[sizeof(cipher)];
     for (int i = 0; i < NITER; i++) {
@@ -72,4 +80,7 @@ main(void)
         printf("%c", decbuf[i] == plain[i] ? '.' : '!');
     }
     printf("\n");
+    getrusage(RUSAGE_SELF, &usage);
+
+    printf("Total time: %lu\n", usage.ru_utime.tv_sec);
 }
