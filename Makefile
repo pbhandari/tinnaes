@@ -11,13 +11,15 @@ override CFLAGS  := -Wall -Wextra -pedantic -funroll-loops -Os -std=c99 $(CFLAGS
 override LDFLAGS := $(LDFLAGS)
 
 PROF_FLAGS := --text
-PROF_FILE := tinnaes.prof
+PROF_FILE := $(SRCNAME).prof
 
+SRCNAME := tinnaes
 KEY_SIZE := 128
 CHAINING := ecb
 
-all: $(BUILDDIR)/tinnaes.o
-default: $(BUILDDIR)/tinnaes.o
+all: $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
+default: $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
+test: test-$(KEY_SIZE)-$(CHAINING)
 
 prof: CC=gcc
 prof: CFLAGS+=-g -DNITER=1""000""000
@@ -25,23 +27,33 @@ prof: LDFLAGS+=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
 prof: export CPUPROFILE=$(PROF_FILE)
 prof: all test
-	pprof $(PROF_FLAGS) $(BUILDDIR)/test $(PROF_FILE)
-	size $(BUILDDIR)/test
+	pprof $(PROF_FLAGS) $(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING) $(PROF_FILE)
+	size $(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
 cachegrind: CFLAGS+=-g -DNITER=100""000
 cachegrind: all test
-	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out $(BUILDDIR)/test
+	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out \
+	$(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
-test: $(TESTDIR)/test-$(KEY_SIZE)-$(CHAINING).c $(BUILDDIR)/tinnaes.o
-	$(CC) $(CFLAGS) $< -o $(BUILDDIR)/$@ $(LDFLAGS)
-	./$(BUILDDIR)/test
+test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
+                    $(TESTDIR)/test-%-$(CHAINING).c
+	$(CC) $(CFLAGS) $^ -o $(BUILDDIR)/$@ $(LDFLAGS)
+	./$(BUILDDIR)/$@
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%-$(KEY_SIZE)-$(CHAINING).c $(INCDIR)/%-$(KEY_SIZE).h
-	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) $< -o $@
+$(SRCNAME)-$(CHAINING).o : $(BUILDDIR)/$(SRCNAME)-$(CHAINING).o
+$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o : $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
+
+$(BUILDDIR)/$(SRCNAME)-%.o: $(SRCDIR)/$(SRCNAME)-%.c $(INCDIR)/$(SRCNAME)-%.h
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o: $(SRCDIR)/$(SRCNAME)-%-$(CHAINING).c \
+                                        $(BUILDDIR)/$(SRCNAME)-%.o
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	-@rm $(BUILDDIR)/*.o $(BUILDDIR)/test $(PROF_FILE) || true
+	-@rm -r $(BUILDDIR) $(PROF_FILE) || true
 
 tags:
 	ctags -R --extra=+f $(SRCDIR) $(TESTDIR)
