@@ -1,0 +1,17 @@
+---
+Language                                       : Cpp
+BasedOnStyle                                   : LLVM
+AccessModifierOffset                           : -3
+AlwaysBreakAfterDefinitionReturnType           : true
+BreakBeforeBinaryOperators                     : None
+ColumnLimit                                    : 80
+SpacesBeforeTrailingComments                   : 2
+IndentWidth                                    : 4
+TabWidth                                       : 8
+UseTab                                         : Never
+BreakBeforeBraces                              : Linux
+SpacesInContainerLiterals                      : true
+SpaceBeforeAssignmentOperators                 : true
+ContinuationIndentWidth                        : 4
+CommentPragmas                                 : '^ IWYU pragma                        : '
+SpaceBeforeParens                              : ControlStatements

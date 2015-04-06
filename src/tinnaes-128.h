@@ -19,32 +19,44 @@
 #include <stdint.h>
 
 #define STR_TO_WORD_ARRAY(str, word)                                           \
-do {                                                                           \
-    word[0] = (str[0]  << 24) | (str[1]  << 16) | (str[2]  << 8) | str[3];     \
-    word[1] = (str[4]  << 24) | (str[5]  << 16) | (str[6]  << 8) | str[7];     \
-    word[2] = (str[8]  << 24) | (str[9]  << 16) | (str[10] << 8) | str[11];    \
-    word[3] = (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];    \
-} while(0);                                                                    \
-
+    do {                                                                       \
+        word[0] = (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | str[3];    \
+        word[1] = (str[4] << 24) | (str[5] << 16) | (str[6] << 8) | str[7];    \
+        word[2] = (str[8] << 24) | (str[9] << 16) | (str[10] << 8) | str[11];  \
+        word[3] =                                                              \
+            (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];      \
+    } while (0);
 
 #define WORD_ARRAY_TO_STR(wd, st)                                              \
-do {                                                                           \
-    st[0]  = wd[0]>>24; st[1]  = wd[0]>>16; st[2]  = wd[0]>>8; st[3]  = wd[0]; \
-    st[4]  = wd[1]>>24; st[5]  = wd[1]>>16; st[6]  = wd[1]>>8; st[7]  = wd[1]; \
-    st[8]  = wd[2]>>24; st[9]  = wd[2]>>16; st[10] = wd[2]>>8; st[11] = wd[2]; \
-    st[12] = wd[3]>>24; st[13] = wd[3]>>16; st[14] = wd[3]>>8; st[15] = wd[3]; \
-} while(0);                                                                    \
+    do {                                                                       \
+        st[0] = wd[0] >> 24;                                                   \
+        st[1] = wd[0] >> 16;                                                   \
+        st[2] = wd[0] >> 8;                                                    \
+        st[3] = wd[0];                                                         \
+        st[4] = wd[1] >> 24;                                                   \
+        st[5] = wd[1] >> 16;                                                   \
+        st[6] = wd[1] >> 8;                                                    \
+        st[7] = wd[1];                                                         \
+        st[8] = wd[2] >> 24;                                                   \
+        st[9] = wd[2] >> 16;                                                   \
+        st[10] = wd[2] >> 8;                                                   \
+        st[11] = wd[2];                                                        \
+        st[12] = wd[3] >> 24;                                                  \
+        st[13] = wd[3] >> 16;                                                  \
+        st[14] = wd[3] >> 8;                                                   \
+        st[15] = wd[3];                                                        \
+    } while (0);
 
+#define LSHIFT(word, n) ((word << (n * 8)) | (word >> ((4 - n) * 8)))
+#define RSHIFT(word, n) ((word >> (n * 8)) | (word << ((4 - n) * 8)))
 
-#define LSHIFT(word, n) ((word << (n*8)) | (word >> ((4-n) * 8)))
-#define RSHIFT(word, n) ((word >> (n*8)) | (word << ((4-n) * 8)))
-
-#define SBOX_AT(idx, sbox)                                                   \
-    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16)     \
-    | (sbox[0xff & (idx >>  8)] <<  8) | (sbox[0xff & (idx      )]    ))
+#define SBOX_AT(idx, sbox)                                                     \
+    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) |     \
+     (sbox[0xff & (idx >> 8)] << 8) | (sbox[0xff & (idx)]))
 
 typedef uint8_t sbox_t[256];
 
+// clang-format off
 static const sbox_t sbox = {
     // 0   1     2     3     4     5     6     7     8     9     A     B     C     D     E     F
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,  // 0
@@ -110,14 +122,12 @@ static const uint8_t mult2[256] = {
     0xfb, 0xf9, 0xff, 0xfd, 0xf3, 0xf1, 0xf7, 0xf5, 0xeb, 0xe9, 0xef, 0xed, 0xe3, 0xe1, 0xe7, 0xe5,  // F
 };
 
+// clang-format on
 
-void
-key_expansion(uint32_t *key);
+void key_expansion(uint32_t *key);
 
-void
-encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key);
+void encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key);
 
-void
-decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key);
+void decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key);
 
 #endif  // INCLUDE_TINNAES_128_H_

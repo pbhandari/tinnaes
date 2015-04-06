@@ -19,7 +19,7 @@
 #include <string.h>
 
 void
-encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher,
+encrypt(const uint8_t *plaintext, const uint8_t *keytext, uint8_t *cipher,
         size_t length)
 {
     uint32_t key[44];
@@ -28,16 +28,15 @@ encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher,
 
     uint32_t plain[4];
 
-    for (size_t i = 0; i < length; i+=16) {
+    for (size_t i = 0; i < length; i += 16) {
         STR_TO_WORD_ARRAY((plaintext + i), plain);
         encrypt_block(plain, key);
         WORD_ARRAY_TO_STR(plain, (cipher + i));
     }
 }
 
-
 void
-decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain,
+decrypt(const uint8_t *ciphertext, const uint8_t *keytext, uint8_t *plain,
         size_t length)
 {
     uint32_t key[44];
@@ -46,7 +45,7 @@ decrypt(const uint8_t* ciphertext, const uint8_t* keytext, uint8_t* plain,
 
     uint32_t cipher[4];
 
-    for (size_t i = 0; i < length; i+=16) {
+    for (size_t i = 0; i < length; i += 16) {
         STR_TO_WORD_ARRAY((ciphertext + i), cipher);
         decrypt_block(cipher, key);
         WORD_ARRAY_TO_STR(cipher, (plain + i));
