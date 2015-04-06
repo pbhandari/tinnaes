@@ -14,10 +14,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "tinnaes-128.h"
 #include <stdint.h>
 #include <string.h>
-
-#include "tinnaes-128.h"
 
 void
 encrypt(const uint8_t* plaintext, const uint8_t* keytext, uint8_t* cipher,
