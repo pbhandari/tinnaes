@@ -35,7 +35,8 @@ cachegrind: all test
 	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out \
 	$(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
-test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
+test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%.o \
+		    $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
                     $(TESTDIR)/test-%-$(CHAINING).c
 	$(CC) $(CFLAGS) $^ -o $(BUILDDIR)/$@ $(LDFLAGS)
 	./$(BUILDDIR)/$@
