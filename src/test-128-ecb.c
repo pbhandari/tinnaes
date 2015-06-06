@@ -46,18 +46,6 @@ static const unsigned char cipher[] = {
 };
 // clang-format on
 
-void
-test_encrypt(unsigned char *retbuf)
-{
-    encrypt(plain, key, retbuf, sizeof(plain));
-}
-
-void
-test_decrypt(unsigned char *retbuf)
-{
-    decrypt(cipher, key, retbuf, sizeof(cipher));
-}
-
 int
 main(void)
 {
@@ -66,8 +54,8 @@ main(void)
     unsigned char encbuf[sizeof(plain)];
     unsigned char decbuf[sizeof(cipher)];
     for (int i = 0; i < NITER; i++) {
-        test_encrypt(encbuf);
-        test_decrypt(decbuf);
+        encrypt(plain, key, encbuf, sizeof(plain));
+        decrypt(cipher, key, decbuf, sizeof(cipher));
     }
 
     for (size_t i = 0; i < sizeof(plain) - 1; i++) {
