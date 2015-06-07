@@ -16,7 +16,11 @@
 
 #ifndef INCLUDE_TINNAES_128_H_
 #define INCLUDE_TINNAES_128_H_
+
 #include <stdint.h>
+
+typedef uint8_t sbox_t[256];
+
 
 #define STR_TO_WORD_ARRAY(str, word)                                           \
     do {                                                                       \
@@ -53,8 +57,6 @@
 #define SBOX_AT(idx, sbox)                                                     \
     ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) |     \
      (sbox[0xff & (idx >> 8)] << 8) | (sbox[0xff & (idx)]))
-
-typedef uint8_t sbox_t[256];
 
 // clang-format off
 static const sbox_t sbox = {
@@ -124,10 +126,12 @@ static const uint8_t mult2[256] = {
 
 // clang-format on
 
-void key_expansion(uint32_t *key);
+void key_expansion(const uint8_t *restrict keytext, uint32_t *restrict key);
 
-void encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key);
+void encrypt_block(const uint8_t *restrict plain, const uint32_t *restrict key,
+                    uint8_t *restrict cipher);
 
-void decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key);
+void decrypt_block(const uint8_t *restrict cipher, const uint32_t *restrict key,
+                   uint8_t *restrict plain);
 
 #endif  // INCLUDE_TINNAES_128_H_

@@ -133,22 +133,29 @@ inv_shift_rows(uint32_t *state)
 }
 
 void
-key_expansion(uint32_t *round_key)
+key_expansion(const uint8_t *restrict keytext, uint32_t *restrict key)
 {
-    for (uint8_t i = 1, j = 4; i < 11; i++, j += 4) {
-        round_key[j] = SBOX_AT(LSHIFT(round_key[j - 1], 1), sbox) ^
-                       (RCON[i] << 24) ^ round_key[j - 4];
+    STR_TO_WORD_ARRAY(keytext, key);
 
-        round_key[j + 1] = round_key[j - 3] ^ round_key[j];
-        round_key[j + 2] = round_key[j - 2] ^ round_key[j + 1];
-        round_key[j + 3] = round_key[j - 1] ^ round_key[j + 2];
+    for (uint8_t i = 1, j = 4; i < 11; i++, j += 4) {
+        key[j] = SBOX_AT(LSHIFT(key[j - 1], 1), sbox) ^ (RCON[i] << 24)
+                                                      ^ key[j - 4];
+
+        key[j + 1] = key[j - 3] ^ key[j];
+        key[j + 2] = key[j - 2] ^ key[j + 1];
+        key[j + 3] = key[j - 1] ^ key[j + 2];
     }
 }
 
 void
-encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key)
+encrypt_block(const uint8_t *restrict plain, const uint32_t *restrict key,
+              uint8_t *restrict cipher)
 {
+    uint32_t plaintext[4];
+    STR_TO_WORD_ARRAY(plain, plaintext);
+
     add_round_key(plaintext, &key[0]);
+
     for (int i = 4; i < 40; i += 4) {
         shift_rows(plaintext);
 
@@ -159,11 +166,17 @@ encrypt_block(uint32_t *restrict plaintext, const uint32_t *restrict key)
     shift_rows(plaintext);
     sub_bytes(plaintext, sbox);
     add_round_key(plaintext, &key[40]);
+
+    WORD_ARRAY_TO_STR(plaintext, cipher);
 }
 
 void
-decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key)
+decrypt_block(const uint8_t *restrict cipher, const uint32_t *restrict key,
+              uint8_t *restrict plain)
 {
+    uint32_t ciphertext[4];
+    STR_TO_WORD_ARRAY(cipher, ciphertext);
+
     add_round_key(ciphertext, &key[40]);
 
     for (int i = 36; i > 0; i -= 4) {
@@ -177,4 +190,6 @@ decrypt_block(uint32_t *restrict ciphertext, const uint32_t *restrict key)
 
     sub_bytes(ciphertext, rev_sbox);
     add_round_key(ciphertext, &key[0]);
+
+    WORD_ARRAY_TO_STR(ciphertext, plain);
 }
