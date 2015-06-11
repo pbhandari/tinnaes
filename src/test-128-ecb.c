@@ -69,5 +69,5 @@ main(void)
     printf("\n");
     getrusage(RUSAGE_SELF, &usage);
 
-    printf("Total time: %lu\n", usage.ru_utime.tv_sec);
+    printf("Total time: %lu seconds.\n", usage.ru_utime.tv_sec);
 }
