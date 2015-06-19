@@ -21,6 +21,12 @@ all: $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
 default: $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
 test: test-$(KEY_SIZE)-$(CHAINING)
 
+aes-% : TINNAES_CFLAGS+=-DUSE_AES_IMPL
+aes-% : TINNAES_LDFLAGS+=-lcrypto
+aes-test : test
+aes-prof : prof
+aes-cachegrind : cachegrind
+
 prof: CC=gcc
 prof: TINNAES_CFLAGS+=-g -DNITER=1""000""000
 prof: TINNAES_LDFLAGS+=-lprofiler
@@ -36,15 +42,16 @@ cachegrind: clean test
 	$(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
 test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%.o \
-		    $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
-		    $(BUILDDIR)/constants.o \
-                    $(BUILDDIR)/test-%-$(CHAINING).o
+			$(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
+			$(BUILDDIR)/constants.o \
+			$(BUILDDIR)/test-%-$(CHAINING).o
 	$(CC) $^ -o $(BUILDDIR)/$@ $(TINNAES_LDFLAGS) $(LDFLAGS)
 	./$(BUILDDIR)/$@
 
 $(BUILDDIR)/constants.o : TINNAES_CFLAGS+=-Os
 $(BUILDDIR)/$(SRCNAME)-%.o: $(SRCDIR)/$(SRCNAME)-%.c $(INCDIR)/$(SRCNAME)-%.h
 $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o: $(SRCDIR)/$(SRCNAME)-%-$(CHAINING).c
+$(BUILDDIR)/test-%-$(CHAINING).o: $(SRCDIR)/test-%-$(CHAINING).c .PHONY
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(@D)

@@ -23,10 +23,38 @@
 #include <stdio.h>
 #include <sys/resource.h>
 
+#ifdef USE_AES_IMPL
+#include <openssl/aes.h>
+
+void
+ssl_encrypt(const uint8_t *plaintext, const uint8_t *keytext, uint8_t *cipher,
+        size_t length)
+{
+    AES_KEY key;
+    AES_set_encrypt_key(keytext, 128, &key);
+
+    for (size_t i = 0; i < length; i += 16) {
+        AES_encrypt(plaintext + i, cipher + i, &key);
+    }
+}
+
+void
+ssl_decrypt(const uint8_t *ciphertext, const uint8_t *keytext, uint8_t *plain,
+        size_t length)
+{
+    AES_KEY key;
+    AES_set_decrypt_key(keytext, 128, &key);
+
+    for (size_t i = 0; i < length; i += 16) {
+        AES_decrypt(ciphertext + i, plain + i, &key);
+    }
+}
+#else
 void encrypt(const uint8_t *plaintext, const uint8_t *keytext, uint8_t *cipher,
              size_t length);
 void decrypt(const uint8_t *ciphertext, const uint8_t *keytext, uint8_t *plain,
              size_t length);
+#endif
 
 // clang-format off
 static const unsigned char key[]    =
@@ -56,8 +84,13 @@ main(void)
     unsigned char encbuf[sizeof(plain)];
     unsigned char decbuf[sizeof(cipher)];
     for (int i = 0; i < NITER; i++) {
+#ifndef USE_AES_IMPL
         encrypt(plain, key, encbuf, sizeof(plain));
         decrypt(cipher, key, decbuf, sizeof(cipher));
+#else
+        ssl_encrypt(plain, key, encbuf, sizeof(plain));
+        ssl_decrypt(cipher, key, decbuf, sizeof(cipher));
+#endif
     }
 
     for (size_t i = 0; i < sizeof(plain) - 1; i++) {
