@@ -53,7 +53,6 @@
     ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) |     \
      (sbox[0xff & (idx >> 8)] << 8) | (sbox[0xff & (idx)]))
 
-
 typedef uint8_t sbox_t[256];
 extern sbox_t sbox;
 extern sbox_t rev_sbox;
