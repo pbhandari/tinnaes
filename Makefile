@@ -7,8 +7,8 @@ BUILDDIR := build
 TESTDIR  := $(SRCDIR)
 
 CC := clang
-TINNAES_CFLAGS  := -Wall -Wextra -pedantic -funroll-loops -Os -std=c99 $(CFLAGS)
-TINNAES_LDFLAGS := $(LDFLAGS)
+TINNAES_CFLAGS  := -Wall -Wextra -pedantic -funroll-loops -O3 -std=c99
+TINNAES_LDFLAGS :=
 
 SRCNAME := tinnaes
 KEY_SIZE := 128
@@ -26,33 +26,29 @@ prof: TINNAES_CFLAGS+=-g -DNITER=1""000""000
 prof: TINNAES_LDFLAGS+=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
 prof: export CPUPROFILE=$(PROF_FILE)
-prof: all test
+prof: clean test
 	pprof $(PROF_FLAGS) $(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING) $(PROF_FILE)
 	size $(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
 cachegrind: TINNAES_CFLAGS+=-g -DNITER=100""000
-cachegrind: all test
+cachegrind: clean test
 	valgrind --tool=cachegrind --cachegrind-out-file=cachegrind.out \
 	$(BUILDDIR)/test-$(KEY_SIZE)-$(CHAINING)
 
 test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%.o \
 		    $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o \
-                    $(TESTDIR)/test-%-$(CHAINING).c
-	$(CC) $(TINNAES_CFLAGS) $^ -o $(BUILDDIR)/$@ $(TINNAES_LDFLAGS)
+		    $(BUILDDIR)/constants.o \
+                    $(BUILDDIR)/test-%-$(CHAINING).o
+	$(CC) $^ -o $(BUILDDIR)/$@ $(TINNAES_LDFLAGS) $(LDFLAGS)
 	./$(BUILDDIR)/$@
 
-$(SRCNAME)-$(CHAINING).o : $(BUILDDIR)/$(SRCNAME)-$(CHAINING).o
-$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o : $(BUILDDIR)/$(SRCNAME)-$(KEY_SIZE)-$(CHAINING).o
-
+$(BUILDDIR)/constants.o : TINNAES_CFLAGS+=-Os
 $(BUILDDIR)/$(SRCNAME)-%.o: $(SRCDIR)/$(SRCNAME)-%.c $(INCDIR)/$(SRCNAME)-%.h
-	@mkdir -p $(@D)
-	$(CC) $(TINNAES_CFLAGS) -c $< -o $@
+$(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o: $(SRCDIR)/$(SRCNAME)-%-$(CHAINING).c
 
-$(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o: $(SRCDIR)/$(SRCNAME)-%-$(CHAINING).c \
-                                        $(BUILDDIR)/$(SRCNAME)-%.o
+$(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(@D)
-	$(CC) $(TINNAES_CFLAGS) -c $< -o $@
-
+	$(CC) $(TINNAES_CFLAGS) $(CFLAGS) -c $< -o $@
 clean:
 	-@rm -r $(BUILDDIR) $(PROF_FILE) >/dev/null 2>&1 || true
 
@@ -60,3 +56,4 @@ tags:
 	ctags -R --extra=+f $(SRCDIR) $(TESTDIR)
 
 .PHONY: clean tags prof cachegrind
+.SECONDARY:
