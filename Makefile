@@ -28,7 +28,7 @@ aes-prof : prof
 aes-cachegrind : cachegrind
 
 prof: CC=gcc
-prof: TINNAES_CFLAGS+=-g -DNITER=1""000""000
+prof: TINNAES_CFLAGS+=-g -DNITER=5""000""000
 prof: TINNAES_LDFLAGS+=-lprofiler
 prof: LD_PROFILE=/usr/lib/libprofiler.so
 prof: export CPUPROFILE=$(PROF_FILE)
@@ -51,7 +51,7 @@ test-%-$(CHAINING): $(BUILDDIR)/$(SRCNAME)-%.o \
 $(BUILDDIR)/constants.o : TINNAES_CFLAGS+=-Os
 $(BUILDDIR)/$(SRCNAME)-%.o: $(SRCDIR)/$(SRCNAME)-%.c $(INCDIR)/$(SRCNAME)-%.h
 $(BUILDDIR)/$(SRCNAME)-%-$(CHAINING).o: $(SRCDIR)/$(SRCNAME)-%-$(CHAINING).c
-$(BUILDDIR)/test-%-$(CHAINING).o: $(SRCDIR)/test-%-$(CHAINING).c .PHONY
+$(BUILDDIR)/test-%-$(CHAINING).o: $(SRCDIR)/test-%-$(CHAINING).c
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(@D)

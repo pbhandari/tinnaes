@@ -17,7 +17,11 @@
 #include "tinnaes-128.h"
 #include <stdint.h>
 
-#define STR_TO_WORD_ARRAY(str, word)                                           \
+#ifdef __cplusplus
+#define restrict
+#endif
+
+#define STR_TO_INT_ARRAY(str, word)                                            \
     do {                                                                       \
         word[0] = (str[0] << 24) | (str[1] << 16) | (str[2] << 8) | str[3];    \
         word[1] = (str[4] << 24) | (str[5] << 16) | (str[6] << 8) | str[7];    \
@@ -26,7 +30,7 @@
             (str[12] << 24) | (str[13] << 16) | (str[14] << 8) | str[15];      \
     } while (0);
 
-#define WORD_ARRAY_TO_STR(wd, st)                                              \
+#define INT_ARRAY_TO_STR(wd, st)                                               \
     do {                                                                       \
         st[0] = wd[0] >> 24;                                                   \
         st[1] = wd[0] >> 16;                                                   \
@@ -46,12 +50,8 @@
         st[15] = wd[3];                                                        \
     } while (0);
 
-#define LSHIFT(word, n) ((word << (n * 8)) | (word >> ((4 - n) * 8)))
-#define RSHIFT(word, n) ((word >> (n * 8)) | (word << ((4 - n) * 8)))
-
-#define SBOX_AT(idx, sbox)                                                     \
-    ((sbox[0xff & (idx >> 24)] << 24) | (sbox[0xff & (idx >> 16)] << 16) |     \
-     (sbox[0xff & (idx >> 8)] << 8) | (sbox[0xff & (idx)]))
+#define LSHIFT(word) ((word << 8) | (word >> 24))
+#define RSHIFT(word) ((word >> 8) | (word << 24))
 
 typedef uint8_t sbox_t[256];
 extern sbox_t sbox;
@@ -97,30 +97,18 @@ mult_e(uint8_t a)
     return mult_2(a) ^ mult_2(mult_2(a)) ^ mult_9(a) ^ a;
 }
 
-static inline void
-add_round_key(uint32_t *restrict state, const uint32_t *restrict round_key)
+static inline uint32_t
+sbox_u32(uint32_t idx, const sbox_t sb)
 {
-    state[0] ^= round_key[0];
-    state[1] ^= round_key[1];
-    state[2] ^= round_key[2];
-    state[3] ^= round_key[3];
-}
-
-static inline void
-sub_bytes(uint32_t *state, const sbox_t sb)
-{
-    state[0] = SBOX_AT(state[0], sb);
-    state[1] = SBOX_AT(state[1], sb);
-    state[2] = SBOX_AT(state[2], sb);
-    state[3] = SBOX_AT(state[3], sb);
+    return (sb[0xff & (idx >> 24)] << 24) | (sb[0xff & (idx >> 16)] << 16) |
+           (sb[0xff & (idx >> 8)] << 8) | (sb[0xff & (idx)]);
 }
 
 static void
 inv_mix_columns(uint32_t *state)
 {
-    for (int i = 0; i < 4; i++) {
-        uint8_t st[] = {state[i] >> 24, state[i] >> 16, state[i] >> 8,
-                        state[i]};
+    for (uint32_t *end = state + 4; state < end; state++) {
+        uint8_t st[] = {*state >> 24, *state >> 16, *state >> 8, *state};
         uint8_t tmp[] = {
             mult_e(st[0]) ^ mult_b(st[1]) ^ mult_d(st[2]) ^ mult_9(st[3]),
             mult_9(st[0]) ^ mult_e(st[1]) ^ mult_b(st[2]) ^ mult_d(st[3]),
@@ -128,7 +116,7 @@ inv_mix_columns(uint32_t *state)
             mult_b(st[0]) ^ mult_d(st[1]) ^ mult_9(st[2]) ^ mult_e(st[3]),
         };
 
-        state[i] = tmp[0] << 24 | tmp[1] << 16 | tmp[2] << 8 | tmp[3];
+        *state = tmp[0] << 24 | tmp[1] << 16 | tmp[2] << 8 | tmp[3];
     }
 }
 
@@ -136,109 +124,91 @@ static void
 mix_columns(uint32_t *state)
 {
     // clang-format off
-    for (int i = 0; i < 4; i++) {
-        uint8_t s[] = {state[i] >> 24, state[i] >> 16, state[i] >> 8, state[i]};
-        uint8_t m[] = {mult2[s[0]], mult2[s[1]], mult2[s[2]], mult2[s[3]]};
+    for (uint32_t *end = state + 4; state < end; state++) {
+        uint8_t s[] = { *state >> 24, *state >> 16, *state >> 8, *state };
+        uint8_t m[] = { mult_2(s[0]), mult_2(s[1]), mult_2(s[2]), mult_2(s[3]) };
 
         // mt[x] ^ st[x] == mult(st[x] , 3)
-        state[i] = (m[0]      ^ m[1]^s[1] ^ s[2]      ^ s[3])      << 24 |
-                   (s[0]      ^ m[1]      ^ m[2]^s[2] ^ s[3])      << 16 |
-                   (s[0]      ^ s[1]      ^ m[2]      ^ m[3]^s[3]) << 8  |
-                   (m[0]^s[0] ^ s[1]      ^ s[2]      ^ m[3]);
+        *state = (m[0]      ^ m[1]^s[1] ^ s[2]      ^ s[3])      << 24 |
+                 (s[0]      ^ m[1]      ^ m[2]^s[2] ^ s[3])      << 16 |
+                 (s[0]      ^ s[1]      ^ m[2]      ^ m[3]^s[3]) << 8  |
+                 (m[0]^s[0] ^ s[1]      ^ s[2]      ^ m[3]);
     }
     // clang-format on
-}
-
-static void
-shift_rows(uint32_t *state)
-{
-    // clang-format off
-    uint32_t tmp[] = {
-        (state[0] & 0xff000000) | (state[1] & 0x00ff0000) |
-        (state[2] & 0x0000ff00) | (state[3] & 0x000000ff),
-
-        (state[1] & 0xff000000) | (state[2] & 0x00ff0000) |
-        (state[3] & 0x0000ff00) | (state[0] & 0x000000ff),
-
-        (state[2] & 0xff000000) | (state[3] & 0x00ff0000) |
-        (state[0] & 0x0000ff00) | (state[1] & 0x000000ff),
-
-        (state[3] & 0xff000000) | (state[0] & 0x00ff0000) |
-        (state[1] & 0x0000ff00) | (state[2] & 0x000000ff),
-    };
-    // clang-format on
-
-    state[0] = tmp[0];
-    state[1] = tmp[1];
-    state[2] = tmp[2];
-    state[3] = tmp[3];
-}
-
-static void
-inv_shift_rows(uint32_t *state)
-{
-    // clang-format off
-    uint32_t tmp[] = {
-        (state[0] & 0xff000000) | (state[3] & 0x00ff0000) |
-        (state[2] & 0x0000ff00) | (state[1] & 0x000000ff),
-
-        (state[1] & 0xff000000) | (state[0] & 0x00ff0000) |
-        (state[3] & 0x0000ff00) | (state[2] & 0x000000ff),
-
-        (state[2] & 0xff000000) | (state[1] & 0x00ff0000) |
-        (state[0] & 0x0000ff00) | (state[3] & 0x000000ff),
-
-        (state[3] & 0xff000000) | (state[2] & 0x00ff0000) |
-        (state[1] & 0x0000ff00) | (state[0] & 0x000000ff),
-    };
-    // clang-format on
-
-    state[0] = tmp[0];
-    state[1] = tmp[1];
-    state[2] = tmp[2];
-    state[3] = tmp[3];
 }
 
 void
 key_expansion(const uint8_t *restrict keytext, uint32_t *restrict key)
 {
-    static const uint8_t rcon[] = {
-        // 0   1     2     3     4     5     6     7     8     9     A
-        0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
-    };
-    STR_TO_WORD_ARRAY(keytext, key);
+    STR_TO_INT_ARRAY(keytext, key);
 
-    for (uint8_t i = 1, j = 4; i < 11; i++, j += 4) {
-        key[j] =
-            SBOX_AT(LSHIFT(key[j - 1], 1), sbox) ^ (rcon[i] << 24) ^ key[j - 4];
+    uint32_t rcon = 0x01000000;
+    do {
+        key += 4;
 
-        key[j + 1] = key[j - 3] ^ key[j];
-        key[j + 2] = key[j - 2] ^ key[j + 1];
-        key[j + 3] = key[j - 1] ^ key[j + 2];
-    }
+        *key = sbox_u32(LSHIFT(*(key - 1)), sbox) ^ rcon ^ *(key - 4);
+
+        *(key + 1) = *(key - 3) ^ *(key + 0);
+        *(key + 2) = *(key - 2) ^ *(key + 1);
+        *(key + 3) = *(key - 1) ^ *(key + 2);
+    } while (rcon <<= 1);
+
+    key += 4;
+
+    *key = sbox_u32(LSHIFT(*(key - 1)), sbox) ^ 0x1b000000 ^ *(key - 4);
+
+    *(key + 1) = *(key - 3) ^ *(key + 0);
+    *(key + 2) = *(key - 2) ^ *(key + 1);
+    *(key + 3) = *(key - 1) ^ *(key + 2);
+
+    key += 4;
+
+    *key = sbox_u32(LSHIFT(*(key - 1)), sbox) ^ 0x36000000 ^ *(key - 4);
+
+    *(key + 1) = *(key - 3) ^ *(key + 0);
+    *(key + 2) = *(key - 2) ^ *(key + 1);
+    *(key + 3) = *(key - 1) ^ *(key + 2);
 }
 
+#define SHIFT_ROW(a, b, c, d)                                                  \
+    ((a & 0xff000000) | (b & 0x00ff0000) | (c & 0x0000ff00) | (d & 0x000000ff))
 void
 encrypt_block(const uint8_t *restrict plain, const uint32_t *restrict key,
               uint8_t *restrict cipher)
 {
     uint32_t plaintext[4];
-    STR_TO_WORD_ARRAY(plain, plaintext);
+    STR_TO_INT_ARRAY(plain, plaintext);
 
-    add_round_key(plaintext, &key[0]);
+    const uint32_t *end = key + 36;
+    do {
+        uint32_t tmp[] = {
+            sbox_u32(plaintext[0] ^ key[0], sbox),
+            sbox_u32(plaintext[1] ^ key[1], sbox),
+            sbox_u32(plaintext[2] ^ key[2], sbox),
+            sbox_u32(plaintext[3] ^ key[3], sbox),
+        };
 
-    for (int i = 4; i < 40; i += 4) {
-        shift_rows(plaintext);
+        plaintext[0] = SHIFT_ROW(tmp[0], tmp[1], tmp[2], tmp[3]);
+        plaintext[1] = SHIFT_ROW(tmp[1], tmp[2], tmp[3], tmp[0]);
+        plaintext[2] = SHIFT_ROW(tmp[2], tmp[3], tmp[0], tmp[1]);
+        plaintext[3] = SHIFT_ROW(tmp[3], tmp[0], tmp[1], tmp[2]);
 
-        sub_bytes(plaintext, sbox);
         mix_columns(plaintext);
-        add_round_key(plaintext, &key[i]);
-    }
-    shift_rows(plaintext);
-    sub_bytes(plaintext, sbox);
-    add_round_key(plaintext, &key[40]);
+    } while ((key += 4) < end);
 
-    WORD_ARRAY_TO_STR(plaintext, cipher);
+    uint32_t tmp[] = {
+        sbox_u32(plaintext[0] ^ key[0], sbox),
+        sbox_u32(plaintext[1] ^ key[1], sbox),
+        sbox_u32(plaintext[2] ^ key[2], sbox),
+        sbox_u32(plaintext[3] ^ key[3], sbox),
+    };
+
+    plaintext[0] = SHIFT_ROW(tmp[0], tmp[1], tmp[2], tmp[3]) ^ key[4];
+    plaintext[1] = SHIFT_ROW(tmp[1], tmp[2], tmp[3], tmp[0]) ^ key[5];
+    plaintext[2] = SHIFT_ROW(tmp[2], tmp[3], tmp[0], tmp[1]) ^ key[6];
+    plaintext[3] = SHIFT_ROW(tmp[3], tmp[0], tmp[1], tmp[2]) ^ key[7];
+
+    INT_ARRAY_TO_STR(plaintext, cipher);
 }
 
 void
@@ -246,21 +216,45 @@ decrypt_block(const uint8_t *restrict cipher, const uint32_t *restrict key,
               uint8_t *restrict plain)
 {
     uint32_t ciphertext[4];
-    STR_TO_WORD_ARRAY(cipher, ciphertext);
+    STR_TO_INT_ARRAY(cipher, ciphertext);
 
-    add_round_key(ciphertext, &key[40]);
+    ciphertext[0] = ciphertext[0] ^ key[40];
+    ciphertext[1] = ciphertext[1] ^ key[41];
+    ciphertext[2] = ciphertext[2] ^ key[42];
+    ciphertext[3] = ciphertext[3] ^ key[43];
 
-    for (int i = 36; i > 0; i -= 4) {
-        inv_shift_rows(ciphertext);
+    const uint32_t *curr = key + 36;
+    do {
+        uint32_t tmp[] = {
+            SHIFT_ROW(ciphertext[0], ciphertext[3], ciphertext[2],
+                      ciphertext[1]),
+            SHIFT_ROW(ciphertext[1], ciphertext[0], ciphertext[3],
+                      ciphertext[2]),
+            SHIFT_ROW(ciphertext[2], ciphertext[1], ciphertext[0],
+                      ciphertext[3]),
+            SHIFT_ROW(ciphertext[3], ciphertext[2], ciphertext[1],
+                      ciphertext[0]),
+        };
 
-        sub_bytes(ciphertext, rev_sbox);
-        add_round_key(ciphertext, &key[i]);
+        ciphertext[0] = sbox_u32(tmp[0], rev_sbox) ^ curr[0];
+        ciphertext[1] = sbox_u32(tmp[1], rev_sbox) ^ curr[1];
+        ciphertext[2] = sbox_u32(tmp[2], rev_sbox) ^ curr[2];
+        ciphertext[3] = sbox_u32(tmp[3], rev_sbox) ^ curr[3];
+
         inv_mix_columns(ciphertext);
-    }
-    inv_shift_rows(ciphertext);
+    } while ((curr -= 4) > key);
 
-    sub_bytes(ciphertext, rev_sbox);
-    add_round_key(ciphertext, &key[0]);
+    uint32_t tmp[] = {
+        SHIFT_ROW(ciphertext[0], ciphertext[3], ciphertext[2], ciphertext[1]),
+        SHIFT_ROW(ciphertext[1], ciphertext[0], ciphertext[3], ciphertext[2]),
+        SHIFT_ROW(ciphertext[2], ciphertext[1], ciphertext[0], ciphertext[3]),
+        SHIFT_ROW(ciphertext[3], ciphertext[2], ciphertext[1], ciphertext[0]),
+    };
 
-    WORD_ARRAY_TO_STR(ciphertext, plain);
+    ciphertext[0] = sbox_u32(tmp[0], rev_sbox) ^ curr[0];
+    ciphertext[1] = sbox_u32(tmp[1], rev_sbox) ^ curr[1];
+    ciphertext[2] = sbox_u32(tmp[2], rev_sbox) ^ curr[2];
+    ciphertext[3] = sbox_u32(tmp[3], rev_sbox) ^ curr[3];
+
+    INT_ARRAY_TO_STR(ciphertext, plain);
 }
